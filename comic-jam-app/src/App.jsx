@@ -12,7 +12,6 @@ function App() //main root component, ties all other components in here
         <Route path = "/JoinGame" element = {<JoinGame/>} />
       </Routes>
     </BrowserRouter>
-
     
   );
 };
