@@ -13,9 +13,11 @@ export default function Home()
     return(
         <>
             <h1>Comic Jam! </h1>
-            <div>
+            
+            <div id = "homeButtonContainer">
                 <button onClick={ () => handleClick('CreateLobby')}>Create Lobby</button>
                 <button onClick = { () => handleClick('JoinGame')}>Join a Game</button>
+                
             </div>
         </>
     
