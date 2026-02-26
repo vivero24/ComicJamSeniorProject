@@ -1,0 +1,76 @@
+body
+{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: rgb(0, 0, 0);
+    background-color: rgb(75, 75, 75);
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#homeButtonContainer
+{
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    
+}
+
+.menuContainer
+{
+    background-color: rgb(44, 44, 44);
+    border: 2px solid rgb(0, 0, 0);
+    border-radius: 5px;
+    padding: 10px;
+    max-width: 500px;   
+    color: darkgray;
+    margin: 10px;
+}
+
+
+.inputRow
+{
+    display:flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.inputRow label
+{
+    min-width: 140px;
+    text-align: left;
+}
+
+button
+{
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: rgb(100, 100, 100);
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    width: 100px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+}
+
+button:hover
+{
+    background-color: rgb(150, 150, 150);
+}
+
+
+input
+{
+    width: 100px;
+    padding: 10px;
+    border: 1px solid rgb(200, 200, 200);
+    border-radius: 5px;
+    
+}
+
+
