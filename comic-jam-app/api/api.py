@@ -10,8 +10,12 @@ connection_count = 0
 @socketio.on('connect')
 def connect_handler():
     print('Connection established')
-    
+
     global connection_count
+    
+    if connection_count + 1 > 5:
+        raise ConnectionRefusedError
+
     connection_count = connection_count + 1
     emit('user-count-update', connection_count, broadcast=True)
 
