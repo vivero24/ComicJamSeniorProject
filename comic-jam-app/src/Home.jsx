@@ -22,20 +22,17 @@ export default function Home()
         return () => {
             socket.off('connect');
         }
-
     }, []);
 
     const navigate = useNavigate();
 
-    function handleClick(componentName)
-{
+    function handleClick(componentName) {
         navigate(`/${componentName}`);
     };
 
     return(
         <>
             <h1>Comic Jam! </h1>
-
             <div id = "homeButtonContainer">
                 <button onClick={ () => handleClick('CreateLobby')}>Create Lobby</button>
                 <button onClick = { () => handleClick('JoinGame')}>Join a Game</button> 
