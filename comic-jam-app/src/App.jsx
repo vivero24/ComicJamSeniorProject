@@ -18,9 +18,11 @@ function App() //main root component, ties all other components in here
   
   const getLobbySettings = (lobbySettings) =>
   {
+    
     console.log(`Settings: ${lobbySettings}`);
     setLobbySettings(lobbySettings);
-  }
+    socket.emit("lobby-create", lobbySettings);
+  };
 
   useEffect( () =>
   {
@@ -63,7 +65,7 @@ function App() //main root component, ties all other components in here
     <BrowserRouter>
       <Routes>
         <Route path = "/" element = { <Home/>} />
-        <Route path = "/CreateLobby" element = {<CreateLobby/>}/>
+        <Route path = "/CreateLobby"  element = {<CreateLobby onDataSend={getLobbySettings} />}/>
         <Route path = "/JoinGame" element = {<JoinGame/>} />
         <Route path = "/PlayerLobby" element = {<PlayerLobby/>}/>
       </Routes>

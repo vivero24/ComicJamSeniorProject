@@ -3,7 +3,7 @@ import React, {useState, useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
 
 
-export default function CreateLobby()
+export default function CreateLobby({ onDataSend })
 {
     const navigate = useNavigate();
 
@@ -12,7 +12,7 @@ export default function CreateLobby()
     const[timeLimit, setTimeLimit] = useState(0);
 
     
-    function submitSettings()
+    const onLobbySubmit = () =>
     {
         //send all settings in object - done
         //send message to create a room
@@ -27,6 +27,8 @@ export default function CreateLobby()
 
         
         navigate('/PlayerLobby');
+        console.log(lobby);
+        onDataSend(lobby);
 
     }
 
@@ -52,7 +54,7 @@ export default function CreateLobby()
                     <input type = "number" id = "timeLimit" name = "timeLimit" min = "1" max = "10" value = {timeLimit} onChange = {(e) => setTimeLimit(e.target.value)}></input> <br></br>
                 </div>
                 
-                <button id = "submitButton" name = "submitButton" onClick = {submitSettings}>Submit</button>
+                <button id = "submitButton" name = "submitButton" onClick = {onLobbySubmit}>Submit</button>
                 
             </div>
         </>
