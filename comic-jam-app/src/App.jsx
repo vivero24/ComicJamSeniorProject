@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Home from './Home';
-import CreateLobby from './CreateLobby';
-import JoinGame from './JoinGame';
-import PlayerLobby from './PlayerLobby';
+import Home from './components/Home';
+import CreateLobby from './components/CreateLobby';
+import JoinGame from './components/JoinGame';
+import PlayerLobby from './components/PlayerLobby';
 
 function App() //main root component, ties all other components in here
 {

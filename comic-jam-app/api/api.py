@@ -27,6 +27,12 @@ def disconnect_handler():
     connection_count = connection_count - 1
     emit('user-count-update', connection_count, broadcast=True)
 
+@socketio.on('lobby_submit')
+#lobby data will be passed (JSON)
+def handle_lobby_submit(settings):
+    print(settings)
+
+
 
 if __name__ == '__main__':
     socketio.run(app)

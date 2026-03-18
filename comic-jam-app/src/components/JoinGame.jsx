@@ -5,8 +5,6 @@ export default function JoinGame()
     const [userName, setUserName] = useState('user1');
     const [joinCode, setJoinCode] = useState();
 
-    
-
     return(
         <>
             <h1>Join a Game</h1>

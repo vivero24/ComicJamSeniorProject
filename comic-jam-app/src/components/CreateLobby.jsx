@@ -1,13 +1,23 @@
-import React, {useState} from 'react';
+
+import React, {useState, useEffect} from 'react';
+import { useNavigate } from 'react-router-dom';
+
 
 export default function CreateLobby()
 {
+    const navigate = useNavigate();
+
     const[numOfRounds, setNumOfRounds] = useState(0);
     const[numOfPlayers, setNumOfPlayers] = useState(0);
     const[timeLimit, setTimeLimit] = useState(0);
+
     
     function submitSettings()
     {
+        //send all settings in object - done
+        //send message to create a room
+        //receive entry code from the backend
+        
         const lobby = 
         {
             numOfRounds: numOfRounds,
@@ -15,11 +25,11 @@ export default function CreateLobby()
             timeLimit: timeLimit
         };
 
-        console.log(lobby);
+        console.log(`lobby details: ${lobby} submit button was clicked`);
+        navigate('/PlayerLobby');
+
     }
 
-    //insert function to send info to backend
-    
 
     return(
         <>
@@ -41,7 +51,7 @@ export default function CreateLobby()
                     <label htmlFor = "timeLimit"> Round Time Limit</label>
                     <input type = "number" id = "timeLimit" name = "timeLimit" min = "1" max = "10" value = {timeLimit} onChange = {(e) => setTimeLimit(e.target.value)}></input> <br></br>
                 </div>
-
+                
                 <button id = "submitButton" name = "submitButton" onClick = {submitSettings}>Submit</button>
                 
             </div>
