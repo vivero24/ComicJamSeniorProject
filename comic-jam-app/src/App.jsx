@@ -4,8 +4,61 @@ import CreateLobby from './components/CreateLobby';
 import JoinGame from './components/JoinGame';
 import PlayerLobby from './components/PlayerLobby';
 
+import { socket } from './socket';
+import { useState, useEffect } from 'react';
+
+
+
 function App() //main root component, ties all other components in here
 {
+
+  const [isConnected, setIsConnected] = useState(socket.connected);
+  const [connectionCount, setConnectionCount] = useState(0);
+  const [lobbySettings, setLobbySettings] = useState(null);
+  
+  const getLobbySettings = (lobbySettings) =>
+  {
+    console.log(`Settings: ${lobbySettings}`);
+    setLobbySettings(lobbySettings);
+  }
+
+  useEffect( () =>
+  {
+    function onConnect()
+    {
+      setIsConnected(true);
+      console.log('connected');
+    }
+
+    function onDisconnect()
+    {
+      setIsConnected(false);
+    }
+    
+    function updateConnectionCount(userCount)
+    {
+      setConnectionCount(userCount);
+      console.log(userCount);
+    }
+
+    
+  
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    socket.on('user-count-update', updateConnectionCount);
+    
+
+    return () =>{
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+      
+    }
+  } ,[]);
+
+
+
+
+
   return(
     <BrowserRouter>
       <Routes>

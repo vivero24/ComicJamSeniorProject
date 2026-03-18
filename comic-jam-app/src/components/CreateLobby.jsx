@@ -25,7 +25,7 @@ export default function CreateLobby()
             timeLimit: timeLimit
         };
 
-        console.log(`lobby details: ${lobby} submit button was clicked`);
+        
         navigate('/PlayerLobby');
 
     }
