@@ -15,8 +15,7 @@ export default function CreateLobby({ onDataSend })
     const onLobbySubmit = () =>
     {
         //send all settings in object - done
-        //send message to create a room
-        //receive entry code from the backend
+        //send message to create a room - done on app.jsx
         
         const lobby = 
         {

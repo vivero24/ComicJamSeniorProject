@@ -15,14 +15,21 @@ function App() //main root component, ties all other components in here
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [connectionCount, setConnectionCount] = useState(0);
   const [lobbySettings, setLobbySettings] = useState(null);
+  const[playerInfo, setPlayerInfo] = useState(null);
   
   const getLobbySettings = (lobbySettings) =>
   {
-    
-    console.log(`Settings: ${lobbySettings}`);
     setLobbySettings(lobbySettings);
+    console.log('Settings:', lobbySettings);
     socket.emit("lobby-create", lobbySettings);
   };
+
+  const getPlayerInfo = (playerInfo) =>
+  {
+    setPlayerInfo(playerInfo);
+    console.log('Player info:', playerInfo);
+    socket.emit("player-join", playerInfo);
+  }
 
   useEffect( () =>
   {
@@ -66,7 +73,7 @@ function App() //main root component, ties all other components in here
       <Routes>
         <Route path = "/" element = { <Home/>} />
         <Route path = "/CreateLobby"  element = {<CreateLobby onDataSend={getLobbySettings} />}/>
-        <Route path = "/JoinGame" element = {<JoinGame/>} />
+        <Route path = "/JoinGame" element = {<JoinGame onDataSend = {getPlayerInfo}/>} />
         <Route path = "/PlayerLobby" element = {<PlayerLobby/>}/>
       </Routes>
     </BrowserRouter>

@@ -1,9 +1,27 @@
 import React, {useState} from 'react';
+import { useNavigate } from 'react-router-dom';
 
-export default function JoinGame()
+export default function JoinGame({ onDataSend })
 {
+    const navigate = useNavigate();
     const [userName, setUserName] = useState('user1');
-    const [joinCode, setJoinCode] = useState();
+    const [joinCode, setJoinCode] = useState(0);
+
+    const onPlayerJoin = () =>
+    {
+        const player = 
+        {
+            userName: userName,
+            joinCode: joinCode,
+        };
+
+        navigate('/PlayerLobby');
+        console.log(player);
+        onDataSend(player);
+
+
+        
+    }
 
     return(
         <>
@@ -20,9 +38,7 @@ export default function JoinGame()
                     <input type = "text" id = "username" name = "username" placeholder = "Ex: player123" value = {userName} onChange={(e) => setUserName(e.target.value)}></input>
                 </div>
 
-                <button id = "submitButton" name = "submitButton">Submit
-
-                </button>
+                <button id = "submitButton" name = "submitButton" onClick = {onPlayerJoin}>Submit</button>
 
             </div>
 
