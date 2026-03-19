@@ -5,22 +5,28 @@ export default function JoinGame({ onDataSend })
 {
     const navigate = useNavigate();
     const [userName, setUserName] = useState('user1');
-    const [joinCode, setJoinCode] = useState(0);
+    const [joinCode, setJoinCode] = useState('');
 
     const onPlayerJoin = () =>
     {
-        const player = 
+
+        if(joinCode.length < 5 )
         {
+            window.alert('Join code must be 5 characters long');
+        }
+        else
+        {
+            const player = 
+            {
             userName: userName,
             joinCode: joinCode,
-        };
+            };
 
-        navigate('/PlayerLobby');
-        console.log(player);
-        onDataSend(player);
+            navigate('/PlayerLobby');
+            console.log(player);
+            onDataSend(player);
+        }
 
-
-        
     }
 
     return(
@@ -30,7 +36,7 @@ export default function JoinGame({ onDataSend })
 
                 <div className = "inputRow">
                     <label htmlFor = "gameCode">Enter Game Code</label>
-                    <input type = "text" id = "gameCode" name = "gameCode" placeholder = "4 digit code" value = {joinCode} onChange = {(e) => setJoinCode(e.target.value)}></input>
+                    <input type = "text" id = "gameCode" name = "gameCode" placeholder = "5 digit code"  maxLength= "5" value = {joinCode} onChange = {(e) => setJoinCode(e.target.value)}></input>
                 </div>
 
                 <div className = "inputRow">
@@ -45,3 +51,7 @@ export default function JoinGame({ onDataSend })
         </>
     )
 };
+
+/* what needs to be done
+-- still have to take player object, place it into markup of player lobby
+*/
