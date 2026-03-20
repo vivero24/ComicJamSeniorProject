@@ -10,6 +10,9 @@ def create_app():
     from .models import db
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
     db.init_app(app)
+    
+    with app.app_context():
+        db.create_all()
 
     return app
 

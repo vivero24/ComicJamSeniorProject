@@ -1,6 +1,5 @@
 from flask_socketio import emit
 from . import socketio
-from .models import User, db
 
 connection_count = 0
 
@@ -9,11 +8,7 @@ connection_count = 0
 def connect_handler():
     print('Connection established')
     
-    sample = User(username='temp', email='mail')
-
-    db.session.add(sample)
-    db.session.commit()
-
+  
     global connection_count
 
     if connection_count + 1 > 5:
