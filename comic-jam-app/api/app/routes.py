@@ -10,20 +10,36 @@ from sqlalchemy import select
 
 main = Blueprint("main", __name__, url_prefix='/api')
 
-# Temporary function to test lobby joining
+# TODO:
+# Allow users to leave a lobby and update the database and sessions accordingly
 
+# Temporary function to test lobby joining
+# Actual lobby update code is in events.py
 @main.route('/lobby-contents')
 def get_lobby_contents():
     player_id = session['player_id']
-    
+
     player = db.get_or_404(Player, player_id)
     usernames = []
     for p in player.game.players:
         usernames.append(p.username)
-    
+
     return jsonify(usernames)
 
-
+# /api/join-lobby
+# POST endpoint called when a user attempts to join a game lobby.
+# If the given invite code is valid, associates the ID of a Pame object with the user's Flask session,
+# accessible with the key 'player_id'. Otherwise, throws a 404 error if the code is invalid, or a 403 if the
+# requested lobby is full.
+#
+# If the user is already associated with an existing Game or Player
+# in the database, that object will be deleted and replaced with the Player
+# object created in this endpoint.
+#
+# Expected POST request body:
+#   json containing the fields:
+#   - userName (required)
+#   - joinCode (required)
 @main.route('/join-lobby', methods=['POST'])
 def join_lobby():
     json = request.json
@@ -52,8 +68,7 @@ def join_lobby():
     session['player_id'] = player.player_id
 
     # Gather other all usernames in the lobby and broadcast
-    # lobby-update
-
+    # a lobby-update event
     usernames = []
     for p in player.game.players:
         usernames.append(p.username)
@@ -62,9 +77,25 @@ def join_lobby():
 
     return "lobby joined"
 
+
+# Helper function for create_lobby()
+# Generates a random 5 character string
 def generate_game_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
 
+# /api/create-lobby
+# POST endpoint called when a user creates a game lobby.
+# Associates the ID of a Game object with the user's Flask session,
+# accessible with the key 'host_id'.
+#
+# If the user is already associated with an existing Game or Player
+# in the database, that object will be deleted and replaced with the Game
+# object created in this endpoint.
+#
+# Expected POST request body:
+#   json containing the fields:
+#   - numOfPlayers (required)
+#   - timeLimit (required)
 @main.route('/create-lobby', methods=['POST'])
 def create_lobby():
     json = request.json
