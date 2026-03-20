@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client'
 
-const URL = 'http://localhost:5000'
-const socket = io(URL);
+//const URL = 'http://localhost:5000'
+//const socket = io(URL);
 
 export default function Home()
 {
+    /*
     const [connected, setConnected] = useState("false");
     const [connectionCount, setConnectionCount] = useState(0);
 
@@ -23,6 +24,7 @@ export default function Home()
             socket.off('connect');
         }
     }, []);
+    */
 
     const navigate = useNavigate();
 
@@ -37,8 +39,10 @@ export default function Home()
                 <button onClick={ () => handleClick('CreateLobby')}>Create Lobby</button>
                 <button onClick = { () => handleClick('JoinGame')}>Join a Game</button> 
             </div>
+            {/*
             <p>Connected: {connected.toLocaleString()}</p>
             <p>Users Connected: {connectionCount.toLocaleString()} </p>
+            -*/}
         </>
 
     );
