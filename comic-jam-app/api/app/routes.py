@@ -12,9 +12,9 @@ main = Blueprint("main", __name__, url_prefix='/api')
 
 # TODO:
 # Allow users to leave a lobby and update the database and sessions accordingly
+# Place users into SocketIO rooms when they join or create lobbies
 
 # Temporary function to test lobby joining
-# Actual lobby update code is in events.py
 @main.route('/lobby-contents')
 def get_lobby_contents():
     player_id = session['player_id']
@@ -72,7 +72,10 @@ def join_lobby():
     usernames = []
     for p in player.game.players:
         usernames.append(p.username)
-
+    
+    # Broadcast lobby-update event,
+    # namespace parameter is required when emitting an event in a REST endpoint
+    # TODO: Place users in rooms so this data isn't sent to users in other lobby 
     emit('lobby-update', usernames, broadcast=True, namespace='/')
 
     return "lobby joined"
