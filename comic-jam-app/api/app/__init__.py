@@ -1,10 +1,17 @@
 from flask import Flask
 from flask_socketio import SocketIO
+from flask_cors import CORS
+
 
 socketio = SocketIO(cors_allowed_origins='*')
 
 def create_app():
     app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'REPLACE_WITH_SOMETHING_SECURE'
+    app.config["SESSION_COOKIE_SAMESITE"] = "None"
+    app.config["SESSION_COOKIE_SECURE"] = True
+    CORS(app, supports_credentials=True)
+
     socketio.init_app(app)
     
     # Blueprint initialization

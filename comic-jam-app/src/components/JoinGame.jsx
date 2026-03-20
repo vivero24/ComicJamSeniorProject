@@ -1,32 +1,42 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function JoinGame({ onDataSend })
 {
     const navigate = useNavigate();
-    const [userName, setUserName] = useState('user1');
+    const [userName, setUserName] = useState('');
     const [joinCode, setJoinCode] = useState('');
 
-    const onPlayerJoin = () =>
-    {
+    useEffect(() => {
+        fetch('http://localhost:5000/api/username', { credentials: 'include'})
+            .then(response => response.text())
+            .then(data => setUserName(data));
+    }, []);
 
+    const onPlayerJoin = async () =>
+    {
         if(joinCode.length < 5 )
         {
             window.alert('Join code must be 5 characters long');
         }
         else
         {
-            const player = 
-            {
-            userName: userName,
-            joinCode: joinCode,
-            };
+            const player =
+                {
+                    userName: userName,
+                    joinCode: joinCode,
+                };
 
-            navigate('/PlayerLobby');
-            console.log(player);
+            fetch('api/join-lobby', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(player),
+                credentials: 'include'
+            });
+
+            //navigate('/PlayerLobby');
             onDataSend(player);
         }
-
     }
 
     return(
@@ -45,7 +55,6 @@ export default function JoinGame({ onDataSend })
                 </div>
 
                 <button id = "submitButton" name = "submitButton" onClick = {onPlayerJoin}>Submit</button>
-
             </div>
 
         </>
