@@ -30,12 +30,16 @@ Linux/macOS:```source .venv/bin/activate```
 
 Finally, install the project dependencies:
 
-```python -m pip install -r requirements.txt```
+```pip3 install -r requirements.txt```
 
 ### Installing new packages
 ```requirements.txt``` must be manually updated upon installing a new package/adding a new dependency:
 
-```python -m pip freeze > requirements.txt```
+while **inside** the ```api/``` direct and with the virtual environment activated, run:
+
+```pip install pipreqs ; pipreqs . --ignore .venv --force ; echo 'dotenv==0.9.9' >> requirements.txt```
+
+This will install and run the pipreqs utility, which generates a new requirements.txt based on the import statements in the project. Note that we must manually append ```dotenv``` onto this requirements.txt. Although ```dotenv``` is not used within the source code, it is necessary to run the Flask server via npm. 
 
 **Make sure to include this file in your commits!**
 ### Running
