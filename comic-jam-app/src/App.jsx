@@ -21,7 +21,10 @@ function App() //main root component, ties all other components in here
   {
     setLobbySettings(lobbySettings);
     console.log('Settings:', lobbySettings);
-    socket.emit("lobby-create", lobbySettings);
+    socket.emit("lobby-create", lobbySettings, (response) =>
+    {
+      console.log('room code:', response.room_code)
+    });
   };
 
   const getPlayerInfo = (playerInfo) =>

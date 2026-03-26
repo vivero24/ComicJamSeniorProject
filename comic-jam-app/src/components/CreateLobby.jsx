@@ -26,7 +26,7 @@ export default function CreateLobby({ onDataSend })
 
         
         navigate('/PlayerLobby');
-        console.log(lobby);
+        //console.log(lobby);
         onDataSend(lobby);
 
     }
