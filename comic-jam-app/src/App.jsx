@@ -16,6 +16,7 @@ function App() //main root component, ties all other components in here
   const [connectionCount, setConnectionCount] = useState(0);
   const [lobbySettings, setLobbySettings] = useState(null);
   const[playerInfo, setPlayerInfo] = useState(null);
+  const[gameCode, setGameCode] = useState('');
   
   const getLobbySettings = (lobbySettings) =>
   {
@@ -24,6 +25,7 @@ function App() //main root component, ties all other components in here
     socket.emit("lobby-create", lobbySettings, (response) =>
     {
       console.log('room code:', response.room_code)
+      setGameCode(response.room_code);
     });
   };
 
@@ -77,7 +79,7 @@ function App() //main root component, ties all other components in here
         <Route path = "/" element = { <Home/>} />
         <Route path = "/CreateLobby"  element = {<CreateLobby onDataSend={getLobbySettings} />}/>
         <Route path = "/JoinGame" element = {<JoinGame onDataSend = {getPlayerInfo}/>} />
-        <Route path = "/PlayerLobby" element = {<PlayerLobby/>}/>
+        <Route path = "/PlayerLobby" element = {<PlayerLobby data = {gameCode}/>}/>
       </Routes>
     </BrowserRouter>
     

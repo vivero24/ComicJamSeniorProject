@@ -1,12 +1,16 @@
-export default function PlayerLobby()
+
+
+export default function PlayerLobby({ data })
 {
 
     //need to get array of current player objects to display them
     //hardcoding them for now
-    
+
+
     return(
         <>
         <h1>Player Lobby</h1>
+        <h1>Game Code: {data.toLocaleString()}</h1>
 
         <div className = "menuContainer" >
             <div className = "playerCard">

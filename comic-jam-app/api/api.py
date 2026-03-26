@@ -41,6 +41,7 @@ def handle_lobby_submit(settings):
     print('room code', room_code)
     join_room(room_code)
     
+    
     return {'status': 'ok',
             'room_code' : room_code}
 
