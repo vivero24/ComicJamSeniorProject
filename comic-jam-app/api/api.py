@@ -34,14 +34,25 @@ def disconnect_handler():
     emit('user-count-update', connection_count, broadcast=True)
 
 @socketio.on('lobby-create')
+
 def handle_lobby_submit(settings):
-    print('message received: ', settings)
+    #print('message received: ', settings)
     room_code = generate_game_code()
     print('room code', room_code)
     join_room(room_code)
     
     return {'status': 'ok',
             'room_code' : room_code}
+
+@socketio.on('player-join')
+def handle_player_join(player):
+    print('player info received: ', player)
+    join_room(player['joinCode'])
+    print('player: ', player['userName'], ' has joined the room')
+
+    return {'status': 'ok',
+            'player' : player['userName']}
+
 
 
 
