@@ -13,17 +13,20 @@ class Game(db.Model, MappedAsDataclass):
 
     host_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, init=False)
     invite_code: Mapped[str] = mapped_column(unique=True)
-    players: Mapped[List["Player"]] = relationship(back_populates='game')
+    player_cap: Mapped[int]
     rount_count: Mapped[int]
     current_round: Mapped[int]
-    time_limit_min: Mapped[int]
+    time_limit_minutes: Mapped[int]
 
+    players: Mapped[List["Player"]] = relationship(back_populates='game')
+   
 class Player(db.Model, MappedAsDataclass):
     __tablename__ = 'player'
 
     player_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, init=False)
     username: Mapped[str]
-    game_id: Mapped[int] = mapped_column(ForeignKey('game.host_id'))
+
+    game_id: Mapped[int] = mapped_column(ForeignKey('game.host_id'), nullable=True)
     game: Mapped["Game"] = relationship(back_populates='players')
 
 

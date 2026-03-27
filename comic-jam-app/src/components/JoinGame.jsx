@@ -7,26 +7,19 @@ export default function JoinGame({ onDataSend })
     const [userName, setUserName] = useState('');
     const [joinCode, setJoinCode] = useState('');
 
-    useEffect(() => {
-        fetch('http://localhost:5000/api/username', { credentials: 'include'})
-            .then(response => response.text())
-            .then(data => setUserName(data));
-    }, []);
-
-    const onPlayerJoin = async () =>
-    {
-        if(joinCode.length < 5 )
-        {
+    const onPlayerJoin = () => {
+        if(joinCode.length < 5 ) {
             window.alert('Join code must be 5 characters long');
         }
-        else
-        {
+        else {
             const player =
                 {
                     userName: userName,
                     joinCode: joinCode,
                 };
-
+            
+            // TODO: handle 403 error when attempting to join a 
+            // lobby that is already full
             fetch('api/join-lobby', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -34,7 +27,7 @@ export default function JoinGame({ onDataSend })
                 credentials: 'include'
             });
 
-            //navigate('/PlayerLobby');
+            navigate('/PlayerLobby');
             onDataSend(player);
         }
     }
