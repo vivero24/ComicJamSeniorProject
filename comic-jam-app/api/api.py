@@ -55,7 +55,5 @@ def handle_player_join(player):
             'player' : player['userName']}
 
 
-
-
 if __name__ == '__main__':
     socketio.run(app)
