@@ -1,26 +1,47 @@
 import React, {useState, useEffect, useLayoutEffect} from 'react';
-
 import { socket } from '../socket.js';
+import { useNavigate } from 'react-router-dom';
 
-export default function PlayerLobby({inviteCode})
+export default function PlayerLobby()
 {
+    const navigate = useNavigate();
     // connect to socket at this point, session should be established in JoinGame
-    const [players, setPlayers] = useState([])
-
+    const [players, setPlayers] = useState([]);
+    const [inviteCode, setInviteCode] = useState('');
     useLayoutEffect(() => {
         fetch('/api/lobby-contents')
         .then(response => response.json())
         .then(json => JSON.parse(JSON.stringify(json)))
-        .then(players => setPlayers(players))
+        .then(data => {
+                console.log(data)
+                setPlayers(data.usernames);
+                setInviteCode(data.invite_code);
+                console.log(data.inviteCode)
+                socket.emit('rejoin-room', data.invite_code)
+                console.log('rejoining room', data.invite_code);
+                
+        })
     }, []);
 
     useEffect(() => {
-        socket.connect();
+        const handleLobbyUpdate = (json) => {
+            console.log('received lobby update signal, new player coming');
+            setPlayers(json);
+        };
 
-        socket.on('lobby-update', (json) => {
-            // accept json array of usernames
-            setPlayers(JSON.parse(JSON.stringify(json)));
-        });
+        socket.on('lobby-update', handleLobbyUpdate);
+
+        fetch('/api/lobby-contents')
+            .then(res => res.json())
+            .then(data => {
+                setPlayers(data.usernames);
+                setInviteCode(data.invite_code);
+                socket.emit('rejoin-room', data.invite_code);
+            })
+
+        return () => {
+            socket.off('lobby-update', handleLobbyUpdate)
+        }
 
 
     }, []);

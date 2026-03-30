@@ -17,6 +17,9 @@ main = Blueprint("main", __name__, url_prefix='/api')
 # Temporary function to test lobby joining
 @main.route('/lobby-contents')
 def get_lobby_contents():
+    invite_code = None
+    player = None
+    game = None
     host_id = session.get('host_id')
     player_id = session.get('player_id')
 
@@ -24,14 +27,16 @@ def get_lobby_contents():
 
     if host_id:
         game = db.get_or_404(Game, host_id)
+        invite_code = game.invite_code
         for p in game.players:
             usernames.append(p.username)
     elif player_id:
         player = db.get_or_404(Player, player_id)
+        invite_code = player.game.invite_code
         for p in player.game.players:
             usernames.append(p.username)
 
-    return jsonify(usernames)
+    return jsonify({'usernames': usernames, 'invite_code': invite_code})
 
 # /api/join-lobby
 # POST endpoint called when a user attempts to join a game lobby.
@@ -82,7 +87,7 @@ def join_lobby():
     # namespace parameter is required when emitting an event in a REST endpoint
     # TODO: Place users in rooms so this data isn't sent to users in other lobby 
 
-    return jsonify({'invite code': requested_invite_code})
+    return jsonify({'invite_code': requested_invite_code})
 
 
 # Helper function for create_lobby()

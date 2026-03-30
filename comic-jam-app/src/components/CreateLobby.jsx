@@ -34,7 +34,7 @@ export default function CreateLobby({ onDataSend })
         .then(res => res.json())
         .then(data => {
             console.log('invite code: ', data.invite_code);
-            socket.emit('join-lobby-socket', data.invite_code)
+            socket.emit('create-lobby-socket', data.invite_code)
             navigate('/PlayerLobby');
             onDataSend(lobby, data.invite_code);
         });

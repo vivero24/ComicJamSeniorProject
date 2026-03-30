@@ -30,7 +30,8 @@ export default function JoinGame({ onDataSend })
             .then(res => res.json())
             .then(() => {
                 socket.emit('join-lobby-socket', joinCode);
-                navigate('/PlayerLobby', {state: {inviteCode: joinCode}});
+                console.log('emitting signal to join room');
+                navigate('/PlayerLobby');
                 onDataSend(player);
 
             });
