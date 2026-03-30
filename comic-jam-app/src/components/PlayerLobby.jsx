@@ -8,6 +8,22 @@ export default function PlayerLobby()
     // connect to socket at this point, session should be established in JoinGame
     const [players, setPlayers] = useState([]);
     const [inviteCode, setInviteCode] = useState('');
+
+
+    useEffect(() => {
+    const handleLobbyUpdate = (json) => {
+        console.log('lobby-update received: ', json);
+        setPlayers(json);
+    };
+
+    socket.on('lobby-update', handleLobbyUpdate);
+    
+    return () => {
+
+        socket.off('lobby-update', handleLobbyUpdate)
+    }
+    }, []);
+    
     useLayoutEffect(() => {
         fetch('/api/lobby-contents')
         .then(response => response.json())
@@ -23,28 +39,7 @@ export default function PlayerLobby()
         })
     }, []);
 
-    useEffect(() => {
-        const handleLobbyUpdate = (json) => {
-            console.log('received lobby update signal, new player coming');
-            setPlayers(json);
-        };
 
-        socket.on('lobby-update', handleLobbyUpdate);
-
-        fetch('/api/lobby-contents')
-            .then(res => res.json())
-            .then(data => {
-                setPlayers(data.usernames);
-                setInviteCode(data.invite_code);
-                socket.emit('rejoin-room', data.invite_code);
-            })
-
-        return () => {
-            socket.off('lobby-update', handleLobbyUpdate)
-        }
-
-
-    }, []);
 
     const onPlayerLeave = () => {
         socket.emit('player-leave');
@@ -59,7 +54,8 @@ export default function PlayerLobby()
 
     //need to get array of current player objects to display them
     //hardcoding them for now
-
+    
+    console.log(players);
     return(
         <>
             <h1>Player Lobby</h1>
@@ -69,7 +65,7 @@ export default function PlayerLobby()
                 
                 {players.map((player, index) => (
                     
-                    <div className = "playerCard" key = {index}>
+                    <div className = "playerCard" key = {player}>
                         <h4>{player}</h4>
                         <img src = "/defaultpfp.png" id = "defaultPicture" width = "40" height = "40"></img>
                     </div>

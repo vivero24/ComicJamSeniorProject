@@ -20,6 +20,7 @@ def test_player():
 @socketio.on('create-lobby-socket')
 def socket_create(invite_code):
     join_room(invite_code, namespace = '/')
+    print('Host joined room ' ,invite_code)
     
 
 @socketio.on('join-lobby-socket')
@@ -41,20 +42,33 @@ def socket_join(invite_code):
 
 @socketio.on('player-leave')
 def socket_leave():
+    host_id = session.get('host_id')
     player_id = session.get('player_id')
-    player = db.get_or_404(Player, player_id)
-    invite_code = player.game.invite_code
-    game_id = player.game_id
 
-    db.session.delete(player)
-    db.session.commit()
-    leave_room(invite_code, namespace= '/')
+    if host_id:
+        game = db.get_or_404(Game, host_id)
+        invite_code = game.invite_code
+        db.session.delete(game)
+        db.session.commit()
+        session.pop('host_id', None)
+        leave_room(invite_code)
+        
+    elif player_id:
+        player = db.get_or_404(Player, player_id)
+        invite_code = player.game.invite_code
+        game_id = player.game_id
 
-    game = db.get_or_404(Game, game_id)
-    usernames = []
-    for p in game.players:
-        usernames.append(p.username)
-    emit('lobby-update', usernames, namespace = '/', to = invite_code)
+        db.session.delete(player)
+        db.session.commit()
+
+        session.pop('player_id', None)
+
+        game = db.get_or_404(Game, game_id)
+        usernames = []
+        for p in game.players:
+            usernames.append(p.username)
+        emit('lobby-update', usernames, to = invite_code)
+        leave_room(invite_code)
 
 @socketio.on('rejoin-room')
 def rejoin(invite_code):
