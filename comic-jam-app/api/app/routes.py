@@ -3,7 +3,7 @@ import random
 import string
 
 from flask import Blueprint, abort, jsonify, request, session
-from flask_socketio import emit
+from flask_socketio import emit, join_room
 
 from .models import db, Game, Player
 from sqlalchemy import select
@@ -76,16 +76,13 @@ def join_lobby():
 
     # Gather other all usernames in the lobby and broadcast
     # a lobby-update event
-    usernames = []
-    for p in player.game.players:
-        usernames.append(p.username)
+
     
     # Broadcast lobby-update event,
     # namespace parameter is required when emitting an event in a REST endpoint
     # TODO: Place users in rooms so this data isn't sent to users in other lobby 
-    emit('lobby-update', usernames, broadcast=True, namespace='/')
 
-    return "lobby joined"
+    return jsonify({'invite code': requested_invite_code})
 
 
 # Helper function for create_lobby()
@@ -132,5 +129,11 @@ def create_lobby():
     # Create new flask session for this host
     session['host_id'] = game.host_id
 
+
     return jsonify({'invite_code': game.invite_code})
 
+
+
+
+
+   

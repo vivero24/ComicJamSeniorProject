@@ -1,6 +1,7 @@
 
 import React, {useState, useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
+import { socket } from '../socket';
 
 
 export default function CreateLobby({ onDataSend })
@@ -33,6 +34,7 @@ export default function CreateLobby({ onDataSend })
         .then(res => res.json())
         .then(data => {
             console.log('invite code: ', data.invite_code);
+            socket.emit('join-lobby-socket', data.invite_code)
             navigate('/PlayerLobby');
             onDataSend(lobby, data.invite_code);
         });

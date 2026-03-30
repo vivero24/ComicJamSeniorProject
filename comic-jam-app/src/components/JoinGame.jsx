@@ -1,5 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
+import { socket } from '../socket';
 
 export default function JoinGame({ onDataSend })
 {
@@ -25,10 +26,14 @@ export default function JoinGame({ onDataSend })
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(player),
                 credentials: 'include'
-            });
+            })
+            .then(res => res.json())
+            .then(() => {
+                socket.emit('join-lobby-socket', joinCode);
+                navigate('/PlayerLobby', {state: {inviteCode: joinCode}});
+                onDataSend(player);
 
-            navigate('/PlayerLobby');
-            onDataSend(player);
+            });
         }
     }
 

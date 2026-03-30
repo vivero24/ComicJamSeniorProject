@@ -25,6 +25,12 @@ export default function PlayerLobby({inviteCode})
 
     }, []);
 
+    const onPlayerLeave = () => {
+        socket.emit('player-leave');
+        navigate('/');
+
+    };
+
     const test = () => {
         socket.emit('test-player');
 
@@ -48,23 +54,7 @@ export default function PlayerLobby({inviteCode})
                     </div>
                     
                 ))}
-                
-                {/*
-                <div className = "playerCard">
-                    <h4>Player 1</h4>
-                    <img src = "/defaultpfp.png" width ="40" height = "40" ></img>
-                </div> 
 
-                <div className = "playerCard">
-                    <h4>Player 2</h4>
-                    <img src = "/defaultpfp.png" width ="40" height = "40" ></img>
-                </div>
-
-                <div className = "playerCard">
-                    <h4>Player 3</h4>
-                    <img src = "/defaultpfp.png" width ="40" height = "40" ></img>
-                </div>
-                */}
             </div>
 
             <div>
@@ -81,8 +71,11 @@ export default function PlayerLobby({inviteCode})
                 </ul>
             </div>
 
-
-            <button onClick = {test} >Start</button>
+            <div className = "buttonContainer">
+                <button onClick = {test} >Start</button>
+                <button onClick = {onPlayerLeave}>Leave Game</button>
+            </div>
+            
 
         </>
 

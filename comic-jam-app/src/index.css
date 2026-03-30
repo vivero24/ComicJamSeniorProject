@@ -9,11 +9,12 @@ body
     align-items: center;
 }
 
-#homeButtonContainer
+.buttonContainer
 {
     display: flex;
     flex-direction: row;
     gap: 10px;
+    justify-content: center;
     
 }
 
