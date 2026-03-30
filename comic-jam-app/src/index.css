@@ -86,5 +86,11 @@ input
     padding: 5px;
 }
 
+#defaultPicture
+{
+    display: flex;
+    justify-content: right;
+}
+
 
 

@@ -29,11 +29,14 @@ export default function CreateLobby({ onDataSend })
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(lobby),
             credentials: 'include'
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log('invite code: ', data.invite_code);
+            navigate('/PlayerLobby');
+            onDataSend(lobby, data.invite_code);
         });
 
-        navigate('/PlayerLobby');
-        console.log(lobby);
-        onDataSend(lobby);
     }
 
     return(

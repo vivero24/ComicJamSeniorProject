@@ -17,12 +17,19 @@ main = Blueprint("main", __name__, url_prefix='/api')
 # Temporary function to test lobby joining
 @main.route('/lobby-contents')
 def get_lobby_contents():
-    player_id = session['player_id']
+    host_id = session.get('host_id')
+    player_id = session.get('player_id')
 
-    player = db.get_or_404(Player, player_id)
     usernames = []
-    for p in player.game.players:
-        usernames.append(p.username)
+
+    if host_id:
+        game = db.get_or_404(Game, host_id)
+        for p in game.players:
+            usernames.append(p.username)
+    elif player_id:
+        player = db.get_or_404(Player, player_id)
+        for p in player.game.players:
+            usernames.append(p.username)
 
     return jsonify(usernames)
 
@@ -125,5 +132,5 @@ def create_lobby():
     # Create new flask session for this host
     session['host_id'] = game.host_id
 
-    return "lobby created"
+    return jsonify({'invite_code': game.invite_code})
 

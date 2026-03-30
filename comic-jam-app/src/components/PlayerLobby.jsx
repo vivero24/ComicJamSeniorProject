@@ -2,7 +2,7 @@ import React, {useState, useEffect, useLayoutEffect} from 'react';
 
 import { socket } from '../socket.js';
 
-export default function PlayerLobby()
+export default function PlayerLobby({inviteCode})
 {
     // connect to socket at this point, session should be established in JoinGame
     const [players, setPlayers] = useState([])
@@ -36,8 +36,20 @@ export default function PlayerLobby()
     return(
         <>
             <h1>Player Lobby</h1>
+            {inviteCode && <h3>Join Code: {inviteCode}</h3>}
 
             <div className = "menuContainer" >
+                
+                {players.map((player, index) => (
+                    
+                    <div className = "playerCard" key = {index}>
+                        <h4>{player}</h4>
+                        <img src = "/defaultpfp.png" id = "defaultPicture" width = "40" height = "40"></img>
+                    </div>
+                    
+                ))}
+                
+                {/*
                 <div className = "playerCard">
                     <h4>Player 1</h4>
                     <img src = "/defaultpfp.png" width ="40" height = "40" ></img>
@@ -52,7 +64,7 @@ export default function PlayerLobby()
                     <h4>Player 3</h4>
                     <img src = "/defaultpfp.png" width ="40" height = "40" ></img>
                 </div>
-
+                */}
             </div>
 
             <div>
