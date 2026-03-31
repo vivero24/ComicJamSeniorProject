@@ -23,16 +23,14 @@ function App() //main root component, ties all other components in here
     setLobbySettings(lobbySettings)
     setInviteCode(code);
     console.log('Settings:', lobbySettings);
-    socket.emit("lobby-create", lobbySettings);
+    //socket.emit("lobby-create", lobbySettings);
   };
-
-  
 
   const getPlayerInfo = (playerInfo) =>
   {
     setPlayerInfo(playerInfo);
     console.log('Player info:', playerInfo);
-    socket.emit("player-join", playerInfo);
+    //socket.emit("player-join", playerInfo);
   }
 
   useEffect( () =>

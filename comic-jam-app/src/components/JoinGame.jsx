@@ -8,7 +8,7 @@ export default function JoinGame({ onDataSend })
     const [userName, setUserName] = useState('');
     const [joinCode, setJoinCode] = useState('');
 
-    const onPlayerJoin = () => {
+    const onPlayerJoin = async () => {
         if(joinCode.length < 5 ) {
             window.alert('Join code must be 5 characters long');
         }
@@ -21,7 +21,7 @@ export default function JoinGame({ onDataSend })
             
             // TODO: handle 403 error when attempting to join a 
             // lobby that is already full
-            fetch('api/join-lobby', {
+            await fetch('api/join-lobby', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(player),
@@ -29,8 +29,9 @@ export default function JoinGame({ onDataSend })
             })
             .then(res => res.json())
             .then(() => {
-                socket.emit('join-lobby-socket', joinCode);
-                console.log('emitting signal to join room');
+
+                // socket.emit('join-lobby-socket', joinCode);
+                // console.log('emitting signal to join room');
                 navigate('/PlayerLobby');
                 onDataSend(player);
 

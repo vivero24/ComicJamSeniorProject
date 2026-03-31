@@ -20,7 +20,7 @@ def create_app():
 
     # Database initialization
     from .models import db
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     db.init_app(app)
     
     with app.app_context():

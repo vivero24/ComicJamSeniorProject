@@ -1,12 +1,36 @@
-from flask import session
+from flask import session, abort
 from flask_socketio import emit, join_room, leave_room
 from .models import db, Player, Game
 from . import socketio
 
-# Websocket Events
+# Websocket Listeners
 @socketio.on('connect')
 def connect_handler():
-    print('Connection established')
+    invite_code: str
+    if 'player_id' in session:
+        player = db.get_or_404(Player, session['player_id'])
+        game = player.game
+        invite_code = player.game.invite_code
+        print(f"Player {player.username} joined lobby {player.game.invite_code}")
+
+    elif 'host_id' in session:
+        game = db.get_or_404(Game, session['host_id'])
+        invite_code = game.invite_code
+        print(f"Host connected to game {game.invite_code}")
+
+    else:
+        print("No ID in session, refusing connection")
+        return ConnectionRefusedError
+
+    join_room(invite_code)
+
+    broadcast_lobby_update(game)
+    
+    settings = {
+            'inviteCode': invite_code
+        # TODO: to be expanded later
+    }
+    emit('settings-update', settings, broadcast=True, to=invite_code)
 
 @socketio.on('disconnect')
 def disconnect_handler():
@@ -17,10 +41,20 @@ def test_player():
     player_id = session['player_id']
     print(player_id)
 
+# Websocket Emitters
+
+def broadcast_lobby_update(game: Game):
+    usernames = []
+    for p in game.players:
+        usernames.append(p.username)
+
+    emit('lobby-update', usernames, broadcast=True, namespace='/', to=game.invite_code)
+
+'''
 @socketio.on('create-lobby-socket')
 def socket_create(invite_code):
     join_room(invite_code, namespace = '/')
-    print('Host joined room ' ,invite_code)
+    print('Host joined room ', invite_code)
     
 
 @socketio.on('join-lobby-socket')
@@ -90,8 +124,8 @@ def rejoin(invite_code):
             usernames.append(p.username)
     else:
         return
-    emit('lobby-update', usernames, to= invite_code)
-        
+    emit('lobby-update', usernames, to=invite_code)
+'''
 
 
 

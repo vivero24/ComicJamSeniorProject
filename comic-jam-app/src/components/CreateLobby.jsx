@@ -13,7 +13,7 @@ export default function CreateLobby({ onDataSend })
     const[timeLimit, setTimeLimit] = useState(0);
 
 
-    const onLobbySubmit = () =>
+    const onLobbySubmit = async () =>
     {
         //send all settings in object - done
         //send message to create a room - done on app.jsx
@@ -25,7 +25,7 @@ export default function CreateLobby({ onDataSend })
             timeLimit: timeLimit
         };
 
-        fetch('api/create-lobby', {
+        await fetch('api/create-lobby', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(lobby),
@@ -33,8 +33,8 @@ export default function CreateLobby({ onDataSend })
         })
         .then(res => res.json())
         .then(data => {
-            console.log('invite code: ', data.invite_code);
-            socket.emit('create-lobby-socket', data.invite_code)
+            console.log('Created lobby with invite code: ', data.invite_code);
+            //socket.emit('create-lobby-socket', data.invite_code)
             navigate('/PlayerLobby');
             onDataSend(lobby, data.invite_code);
         });

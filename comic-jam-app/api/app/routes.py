@@ -2,11 +2,13 @@ from os import name
 import random
 import string
 
-from flask import Blueprint, abort, jsonify, request, session
+from flask import Blueprint, abort, g, jsonify, request, session
 from flask_socketio import emit, join_room
 
 from .models import db, Game, Player
 from sqlalchemy import select
+
+from .events import broadcast_lobby_update
 
 main = Blueprint("main", __name__, url_prefix='/api')
 
@@ -79,10 +81,6 @@ def join_lobby():
     # Create new flask session for this player
     session['player_id'] = player.player_id
 
-    # Gather other all usernames in the lobby and broadcast
-    # a lobby-update event
-
-    
     # Broadcast lobby-update event,
     # namespace parameter is required when emitting an event in a REST endpoint
     # TODO: Place users in rooms so this data isn't sent to users in other lobby 
@@ -134,11 +132,29 @@ def create_lobby():
     # Create new flask session for this host
     session['host_id'] = game.host_id
 
-
     return jsonify({'invite_code': game.invite_code})
 
+@main.route('/leave-lobby')
+def leave_lobby():
+    if 'player_id' in session:
+        player = db.get_or_404(Player, session['player_id'])
+        game = player.game
+        invite_code = player.game.invite_code
 
+        print(f"Deleting player: username={player.username}")
+        db.session.delete(player)
+        session.pop('player_id')
 
+        broadcast_lobby_update(game)
+    elif 'host_id' in session:
+        # TODO: handle game deletion, maybe place host deletion in a different
+        # endpoint entirely?
+        game = db.get_or_404(Game, session['host_id'])
+        print(f"Deleting game: invite_code={game.invite_code}")
 
+        db.session.delete(game)
+        session.pop('host_id')
 
-   
+    db.session.commit()
+
+    return ''
