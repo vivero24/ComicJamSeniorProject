@@ -10,7 +10,6 @@ export default function PlayerLobby()
     const [inviteCode, setInviteCode] = useState('');
 
     useEffect(() => {
-
         const handleLobbyUpdate = (json) => {
             console.log('lobby-update received: ', json);
             setPlayers(json);
@@ -23,8 +22,7 @@ export default function PlayerLobby()
         socket.on('lobby-update', handleLobbyUpdate);
         socket.on('settings-update', handleSettingsUpdate);
 
-
-        // Only connect the websocket at this point
+        // IMPORTANT: Only connect the websocket at this point!
         // Flask sessions only update upon a new socket connection,
         // so this compromise must be made unless we switch to server-side
         // sessions
@@ -32,27 +30,9 @@ export default function PlayerLobby()
 
         return () => {
             socket.off('lobby-update', handleLobbyUpdate)
+            socket.off('settings-update', handleSettingsUpdate)
         }
     }, []);
-
-    useLayoutEffect(() => {
-        /*
-        fetch('/api/lobby-contents')
-            .then(response => response.json())
-            .then(json => JSON.parse(JSON.stringify(json)))
-            .then(data => {
-                console.log(data)
-                setPlayers(data.usernames);
-                setInviteCode(data.invite_code);
-                console.log(data.inviteCode)
-                socket.emit('rejoin-room', data.invite_code)
-                console.log('rejoining room', data.invite_code);
-
-            })
-        */
-    }, []);
-
-
 
     const onPlayerLeave = async () => {
         await fetch('/api/leave-lobby')
@@ -61,15 +41,13 @@ export default function PlayerLobby()
 
     };
 
-    const test = () => {
-        socket.emit('test-player');
-
-    }
-
-    //need to get array of current player objects to display them
-    //hardcoding them for now
-
     console.log(players);
+
+    // TODO:
+    // Start button should only be visible for the host
+    // Requirements doc states that Lobby Config page should be
+    // a separate component, so perhaps redirecting the host to a
+    // separate page would be best?
     return(
         <>
             <h1>Player Lobby</h1>

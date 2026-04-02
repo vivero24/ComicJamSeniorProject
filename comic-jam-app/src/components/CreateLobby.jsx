@@ -12,7 +12,8 @@ export default function CreateLobby({ onDataSend })
     const[numOfPlayers, setNumOfPlayers] = useState(0);
     const[timeLimit, setTimeLimit] = useState(0);
 
-
+    // Must be async so we don't naviate to the next page
+    // before the lobby is created
     const onLobbySubmit = async () =>
     {
         //send all settings in object - done
@@ -38,7 +39,6 @@ export default function CreateLobby({ onDataSend })
             navigate('/PlayerLobby');
             onDataSend(lobby, data.invite_code);
         });
-
     }
 
     return(

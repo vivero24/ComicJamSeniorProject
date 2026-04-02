@@ -1,6 +1,5 @@
-import React, {useState, useEffect} from 'react';
+import {useState} from 'react';
 import { useNavigate } from 'react-router-dom';
-import { socket } from '../socket';
 
 export default function JoinGame({ onDataSend })
 {
@@ -18,9 +17,11 @@ export default function JoinGame({ onDataSend })
                     userName: userName,
                     joinCode: joinCode,
                 };
-            
-            // TODO: handle 403 error when attempting to join a 
+ 
+            // TODO: 
+            // - handle 403 error when attempting to join a
             // lobby that is already full
+            // - handle 404 when lobby does not exist
             await fetch('api/join-lobby', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -30,8 +31,6 @@ export default function JoinGame({ onDataSend })
             .then(res => res.json())
             .then(() => {
 
-                // socket.emit('join-lobby-socket', joinCode);
-                // console.log('emitting signal to join room');
                 navigate('/PlayerLobby');
                 onDataSend(player);
 
@@ -60,7 +59,3 @@ export default function JoinGame({ onDataSend })
         </>
     )
 };
-
-/* what needs to be done
--- still have to take player object, place it into markup of player lobby
-*/
