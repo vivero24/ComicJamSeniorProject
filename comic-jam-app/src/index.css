@@ -87,6 +87,11 @@ input
     text-decoration: underline;
 }
 
+.inline-flex-parent
+{
+    display: inline-flex;
+}
+
 #defaultPicture
 {
     display: flex;

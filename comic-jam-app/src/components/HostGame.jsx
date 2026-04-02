@@ -29,6 +29,9 @@ export default function HostGame({ onDataSend })
     return (
         <>
             <h1> Host Game Debug </h1>
+            <div className="menuContainer">
+                Live View of Comics in Progress
+            </div>
             <div>
                 Round {currRound} of {totalRounds}
             </div>
