@@ -9,12 +9,12 @@ body
     align-items: center;
 }
 
-#homeButtonContainer
+.buttonContainer
 {
     display: flex;
     flex-direction: row;
     gap: 10px;
-    
+    justify-content: center;
 }
 
 .menuContainer
@@ -23,11 +23,10 @@ body
     border: 2px solid rgb(0, 0, 0);
     border-radius: 5px;
     padding: 10px;
-    max-width: 500px;   
+    max-width: 500px;
     color: darkgray;
     margin: 10px;
 }
-
 
 .inputRow
 {
@@ -55,7 +54,6 @@ button
     transition: background-color 0.3s;
     width: 100px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-
 }
 
 button:hover
@@ -63,19 +61,16 @@ button:hover
     background-color: rgb(150, 150, 150);
 }
 
-
 input
 {
     width: 100px;
     padding: 10px;
     border: 1px solid white;
     border-radius: 5px;
-    
 }
 
 .playerCard
 {
-    
     display:flex;
     align-items: center;
     gap: 10px;
@@ -90,4 +85,10 @@ input
 {
     color: rgb(51,102,204);
     text-decoration: underline;
+}
+
+#defaultPicture
+{
+    display: flex;
+    justify-content: right;
 }
