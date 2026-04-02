@@ -1,9 +1,7 @@
-from os import name
 import random
 import string
 
-from flask import Blueprint, abort, g, jsonify, request, session
-from flask_socketio import emit, join_room
+from flask import Blueprint, abort, jsonify, request, session
 
 from .models import db, Game, Player
 from sqlalchemy import select
@@ -11,34 +9,6 @@ from sqlalchemy import select
 from .events import broadcast_lobby_update
 
 main = Blueprint("main", __name__, url_prefix='/api')
-
-# TODO:
-# Allow users to leave a lobby and update the database and sessions accordingly
-# Place users into SocketIO rooms when they join or create lobbies
-
-# Temporary function to test lobby joining
-@main.route('/lobby-contents')
-def get_lobby_contents():
-    invite_code = None
-    player = None
-    game = None
-    host_id = session.get('host_id')
-    player_id = session.get('player_id')
-
-    usernames = []
-
-    if host_id:
-        game = db.get_or_404(Game, host_id)
-        invite_code = game.invite_code
-        for p in game.players:
-            usernames.append(p.username)
-    elif player_id:
-        player = db.get_or_404(Player, player_id)
-        invite_code = player.game.invite_code
-        for p in player.game.players:
-            usernames.append(p.username)
-
-    return jsonify({'usernames': usernames, 'invite_code': invite_code})
 
 # /api/join-lobby
 # POST endpoint called when a user attempts to join a game lobby.
@@ -134,12 +104,22 @@ def create_lobby():
 
     return jsonify({'invite_code': game.invite_code})
 
+# /api/leave-lobby
+# GET endpoint called when user requests to leave a lobby
+#
+# Deletes the user's player/game from the database and removes the
+# associated ID from their Flask session
 @main.route('/leave-lobby')
 def leave_lobby():
+    # TODO: 
+    # - Determine which to ID to delete based on parameter to handle
+    # users having both a host and player ID
+    # - Broadcast message if the game is deleted to inform players
+    # that the lobby is invalid
+
     if 'player_id' in session:
         player = db.get_or_404(Player, session['player_id'])
         game = player.game
-        invite_code = player.game.invite_code
 
         print(f"Deleting player: username={player.username}")
         db.session.delete(player)
@@ -148,12 +128,14 @@ def leave_lobby():
         broadcast_lobby_update(game)
     elif 'host_id' in session:
         # TODO: handle game deletion, maybe place host deletion in a different
-        # endpoint entirely?
+        # endpoint entirely? /api/close-lobby
         game = db.get_or_404(Game, session['host_id'])
         print(f"Deleting game: invite_code={game.invite_code}")
 
         db.session.delete(game)
         session.pop('host_id')
+    else:
+        return abort(403)
 
     db.session.commit()
 

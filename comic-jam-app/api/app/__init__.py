@@ -2,9 +2,9 @@ from flask import Flask
 from flask_socketio import SocketIO
 from flask_cors import CORS
 
+socketio = SocketIO(cors_allowed_origins='*', cors_credentials=True)
 
-socketio = SocketIO(cors_allowed_origins='*')
-
+# App initialization + configuration
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'REPLACE_WITH_SOMETHING_SECURE'
@@ -13,7 +13,7 @@ def create_app():
     CORS(app, supports_credentials=True)
 
     socketio.init_app(app)
-    
+
     # Blueprint initialization
     from .routes import main
     app.register_blueprint(main)
@@ -22,7 +22,7 @@ def create_app():
     from .models import db
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     db.init_app(app)
-    
+
     with app.app_context():
         db.create_all()
 
