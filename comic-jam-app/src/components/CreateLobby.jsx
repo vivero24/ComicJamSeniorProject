@@ -1,8 +1,15 @@
 
 import React, {useState, useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
-import { socket } from '../socket';
 
+// NOTE: Perhaps naming this component to HostLobby should be in order, since
+// the documentation states it should also display the lobby contents alongside
+// the settings
+
+// TODO: 
+// - Create lobby and connect to socket on enter
+// - display invite code and lobby view to align
+// more with requirements document
 
 export default function CreateLobby({ onDataSend })
 {
@@ -16,17 +23,12 @@ export default function CreateLobby({ onDataSend })
     // before the lobby is created
     const onLobbySubmit = async () =>
     {
-        // TODO: 
-        // - Create lobby and connect to socket on enter
-        // - display invite code and lobby view to align 
-        // more with requirements document
-
         const lobby =
-        {
-            numOfRounds: numOfRounds,
-            numOfPlayers: numOfPlayers,
-            timeLimit: timeLimit
-        };
+            {
+                numOfRounds: numOfRounds,
+                numOfPlayers: numOfPlayers,
+                timeLimit: timeLimit
+            };
 
         await fetch('api/create-lobby', {
             method: 'POST',
@@ -42,9 +44,12 @@ export default function CreateLobby({ onDataSend })
         });
     }
 
-    return(
+    return (
         <>
             <h1>Lobby Configuration</h1>
+            <h3>
+                Invite Code: 
+            </h3>
             <div className="inline-flex-parent">
                 <div className = "menuContainer">
                     <div className = "inputRow">
@@ -69,7 +74,6 @@ export default function CreateLobby({ onDataSend })
             <div>
                 <button id = "submitButton" name = "submitButton" onClick = {onLobbySubmit}>Start Game</button>
             </div>
-
         </>
     );
 }
