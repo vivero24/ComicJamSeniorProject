@@ -1,32 +1,41 @@
-import React, {useState} from 'react';
+import {useState} from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function JoinGame({ onDataSend })
 {
     const navigate = useNavigate();
-    const [userName, setUserName] = useState('user1');
+    const [userName, setUserName] = useState('');
     const [joinCode, setJoinCode] = useState('');
 
-    const onPlayerJoin = () =>
-    {
-
-        if(joinCode.length < 5 )
-        {
+    const onPlayerJoin = async () => {
+        if(joinCode.length < 5 ) {
             window.alert('Join code must be 5 characters long');
         }
-        else
-        {
-            const player = 
-            {
-            userName: userName,
-            joinCode: joinCode,
-            };
+        else {
+            const player =
+                {
+                    userName: userName,
+                    joinCode: joinCode,
+                };
+ 
+            // TODO: 
+            // - handle 403 error when attempting to join a
+            // lobby that is already full
+            // - handle 404 when lobby does not exist
+            await fetch('api/join-lobby', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(player),
+                credentials: 'include'
+            })
+            .then(res => res.json())
+            .then(() => {
 
-            navigate('/PlayerLobby');
-            console.log(player);
-            onDataSend(player);
+                navigate('/PlayerLobby');
+                onDataSend(player);
+
+            });
         }
-
     }
 
     return(
@@ -45,13 +54,8 @@ export default function JoinGame({ onDataSend })
                 </div>
 
                 <button id = "submitButton" name = "submitButton" onClick = {onPlayerJoin}>Submit</button>
-
             </div>
 
         </>
     )
 };
-
-/* what needs to be done
--- still have to take player object, place it into markup of player lobby
-*/
