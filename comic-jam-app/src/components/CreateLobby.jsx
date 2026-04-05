@@ -1,8 +1,15 @@
 
 import React, {useState, useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
-import { socket } from '../socket';
 
+// NOTE: Perhaps naming this component to HostLobby should be in order, since
+// the documentation states it should also display the lobby contents alongside
+// the settings
+
+// TODO: 
+// - Create lobby and connect to socket on enter
+// - display invite code and lobby view to align
+// more with requirements document
 
 export default function CreateLobby({ onDataSend })
 {
@@ -16,15 +23,12 @@ export default function CreateLobby({ onDataSend })
     // before the lobby is created
     const onLobbySubmit = async () =>
     {
-        //send all settings in object - done
-        //send message to create a room - done on app.jsx
-
         const lobby =
-        {
-            numOfRounds: numOfRounds,
-            numOfPlayers: numOfPlayers,
-            timeLimit: timeLimit
-        };
+            {
+                numOfRounds: numOfRounds,
+                numOfPlayers: numOfPlayers,
+                timeLimit: timeLimit
+            };
 
         await fetch('api/create-lobby', {
             method: 'POST',
@@ -35,35 +39,40 @@ export default function CreateLobby({ onDataSend })
         .then(res => res.json())
         .then(data => {
             console.log('Created lobby with invite code: ', data.invite_code);
-            //socket.emit('create-lobby-socket', data.invite_code)
-            navigate('/PlayerLobby');
+            navigate('/HostGame');
             onDataSend(lobby, data.invite_code);
         });
     }
 
-    return(
+    return (
         <>
             <h1>Lobby Configuration</h1>
-            <div className = "menuContainer">
+            <h3>
+                Invite Code: 
+            </h3>
+            <div className="inline-flex-parent">
+                <div className = "menuContainer">
+                    <div className = "inputRow">
+                        <label htmlFor = "numOfRounds" > Number of Rounds</label>
+                        <input type = "number" id = "numOfRounds" name = "numOfRounds" min = "1" max = "4" value = {numOfRounds} onChange={(e) => setNumOfRounds(e.target.value)}></input> <br></br>
+                    </div>
 
-                <div className = "inputRow">
-                    <label htmlFor = "numOfRounds" > Number of Rounds</label>
-                    <input type = "number" id = "numOfRounds" name = "numOfRounds" min = "1" max = "4" value = {numOfRounds} onChange={(e) => setNumOfRounds(e.target.value)}></input> <br></br>
+                    <div className = "inputRow">
+                        <label htmlFor = "numOfPlayers"> Number of Players</label>
+                        <input type = "number" id = "numOfPlayers" name = "numOfPlayers" min = "1" max = "4" value = {numOfPlayers} onChange = {(e) => setNumOfPlayers(e.target.value)} ></input> <br></br>
+                    </div>
+
+                    <div className = "inputRow">
+                        <label htmlFor = "timeLimit"> Round Time Limit</label>
+                        <input type = "number" id = "timeLimit" name = "timeLimit" min = "1" max = "10" value = {timeLimit} onChange = {(e) => setTimeLimit(e.target.value)}></input> <br></br>
+                    </div>
                 </div>
-
-
-                <div className = "inputRow">
-                    <label htmlFor = "numOfPlayers"> Number of Players</label>
-                    <input type = "number" id = "numOfPlayers" name = "numOfPlayers" min = "1" max = "4" value = {numOfPlayers} onChange = {(e) => setNumOfPlayers(e.target.value)} ></input> <br></br>
+                <div className = "menuContainer">
+                    Lobby View Here
                 </div>
-
-                <div className = "inputRow">
-                    <label htmlFor = "timeLimit"> Round Time Limit</label>
-                    <input type = "number" id = "timeLimit" name = "timeLimit" min = "1" max = "10" value = {timeLimit} onChange = {(e) => setTimeLimit(e.target.value)}></input> <br></br>
-                </div>
-
-                <button id = "submitButton" name = "submitButton" onClick = {onLobbySubmit}>Submit</button>
-
+            </div>
+            <div>
+                <button id = "submitButton" name = "submitButton" onClick = {onLobbySubmit}>Start Game</button>
             </div>
         </>
     );

@@ -67,7 +67,6 @@ export default function PlayerLobby()
             </div>
 
             <div className = "buttonContainer">
-                <button onClick = {test} >Start</button>
                 <button onClick = {onPlayerLeave}>Leave Game</button>
             </div>
 
