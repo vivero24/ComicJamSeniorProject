@@ -3,32 +3,36 @@ import Home from './components/Home';
 import CreateLobby from './components/CreateLobby';
 import JoinGame from './components/JoinGame';
 import PlayerLobby from './components/PlayerLobby';
+import HostGame from './components/HostGame';
+import PlayerGame from './components/PlayerGame';
+import Showcase from './components/Showcase';
+import Downloads from './components/Downloads';
+
 
 import { socket } from './socket';
 import { useState, useEffect } from 'react';
 
-
-
 function App() //main root component, ties all other components in here
 {
-
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [connectionCount, setConnectionCount] = useState(0);
   const [lobbySettings, setLobbySettings] = useState(null);
   const[playerInfo, setPlayerInfo] = useState(null);
-  
-  const getLobbySettings = (lobbySettings) =>
+  const[inviteCode, setInviteCode] = useState('');
+
+  const getLobbySettings = (lobbySettings, code) =>
   {
-    setLobbySettings(lobbySettings);
+    setLobbySettings(lobbySettings)
+    setInviteCode(code);
     console.log('Settings:', lobbySettings);
-    socket.emit("lobby-create", lobbySettings);
+    //socket.emit("lobby-create", lobbySettings);
   };
 
   const getPlayerInfo = (playerInfo) =>
   {
     setPlayerInfo(playerInfo);
     console.log('Player info:', playerInfo);
-    socket.emit("player-join", playerInfo);
+    //socket.emit("player-join", playerInfo);
   }
 
   useEffect( () =>
@@ -40,45 +44,43 @@ function App() //main root component, ties all other components in here
     }
 
     function onDisconnect()
-    {
-      setIsConnected(false);
-    }
-    
-    function updateConnectionCount(userCount)
-    {
-      setConnectionCount(userCount);
-      console.log(userCount);
-    }
+        {
+                setIsConnected(false);
+            }
 
-    
-  
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-    socket.on('user-count-update', updateConnectionCount);
-    
+            function updateConnectionCount(userCount)
+        {
+                setConnectionCount(userCount);
+                console.log(userCount);
+            }
 
-    return () =>{
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      
-    }
-  } ,[]);
+            socket.on('connect', onConnect);
+            socket.on('disconnect', onDisconnect);
+            socket.on('user-count-update', updateConnectionCount);
 
 
+            return () =>{
+                socket.off('connect', onConnect);
+                socket.off('disconnect', onDisconnect);
 
+            }
+        } ,[]);
 
+    return(
+        <BrowserRouter>
+            <Routes>
+                <Route path = "/" element = { <Home/>} />
+                <Route path = "/CreateLobby"  element = {<CreateLobby onDataSend= {getLobbySettings} />}/>
+                <Route path = "/JoinGame" element = {<JoinGame onDataSend = {getPlayerInfo}/>} />
+                <Route path = "/PlayerLobby" element = {<PlayerLobby/>}/>
+                <Route path = "/HostGame" element = { <HostGame/>} />
+                <Route path = "/PlayerGame" element = { <PlayerGame/>} />
+                <Route path = "/Showcase" element = { <Showcase/>} />
+                <Route path = "/Downloads" element = { <Downloads/>} />
+            </Routes>
+        </BrowserRouter>
 
-  return(
-    <BrowserRouter>
-      <Routes>
-        <Route path = "/" element = { <Home/>} />
-        <Route path = "/CreateLobby"  element = {<CreateLobby onDataSend={getLobbySettings} />}/>
-        <Route path = "/JoinGame" element = {<JoinGame onDataSend = {getPlayerInfo}/>} />
-        <Route path = "/PlayerLobby" element = {<PlayerLobby/>}/>
-      </Routes>
-    </BrowserRouter>
-    
-  );
+    );
 };
 
 export default App;
