@@ -8,10 +8,8 @@ import { socket } from '../socket.js'
 // the settings
 
 // TODO: 
-// - Create lobby and connect to socket on enter
-// - display invite code and lobby view to align
-// more with requirements document
-
+// - Update lobby with players as they join
+// - Send settings to the server as they are updated
 export default function CreateLobby({ onDataSend })
 {
     const navigate = useNavigate();

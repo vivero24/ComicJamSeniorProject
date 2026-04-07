@@ -1,7 +1,5 @@
 import React, {useState, useEffect} from 'react';
-
 import { useNavigate } from 'react-router-dom';
-
 import { socket } from '../socket.js'
 
 export default function PlayerGame({ onDataSend })
@@ -10,11 +8,12 @@ export default function PlayerGame({ onDataSend })
 
     const[currRound, setCurrRound] = useState(0)
     const[totalRounds, setTotalRounds] = useState(0)
-    const[initialTimeLimit, setInitialTimeLimit] = useState(0)
     const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit)
 
     useEffect(() => {
-
+        // TODO:
+        // - Display countdown using time limit retrieved
+        // from the websocket event
         const handleRoundStart = (json, callback) => {
             console.log(json)
 
@@ -37,7 +36,7 @@ export default function PlayerGame({ onDataSend })
         socket.on('round-start', handleRoundStart);
         socket.on('round-end', handleRoundEnd);
         socket.on('game-end', handleGameEnd);
-        
+
         return () => {
             socket.off('round-start', handleRoundStart);
             socket.on('round-end', handleRoundEnd);

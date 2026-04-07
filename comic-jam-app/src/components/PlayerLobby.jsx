@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 export default function PlayerLobby()
 {
     const navigate = useNavigate();
-    // connect to socket at this point, session should be established in JoinGame
     const [players, setPlayers] = useState([]);
     const [inviteCode, setInviteCode] = useState('');
 
@@ -20,7 +19,7 @@ export default function PlayerLobby()
         };
 
         // Invoke anonymous "callback" function to acknowledge that the
-        // event was handld
+        // event was handled
         const acknowledgeGameStart = (callback) => {
             callback()
             navigate('/PlayerGame');
@@ -29,7 +28,7 @@ export default function PlayerLobby()
         socket.on('lobby-update', handleLobbyUpdate);
         socket.on('settings-update', handleSettingsUpdate);
         socket.on('game-start-ack-requested', acknowledgeGameStart);
-    
+
         socket.connect();
 
         return () => {
@@ -45,13 +44,7 @@ export default function PlayerLobby()
     };
 
     console.log(players);
-
-    // TODO:
-    // Start button should only be visible for the host
-    // Requirements doc states that Lobby Config page should be
-    // a separate component, so perhaps redirecting the host to a
-    // separate page would be best?
-    return(
+        return(
         <>
             <h1>Player Lobby</h1>
             {inviteCode && <h3>Join Code: {inviteCode}</h3>}
