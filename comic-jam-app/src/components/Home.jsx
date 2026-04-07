@@ -9,14 +9,13 @@ export default function Home()
     };
 
     return(
-        <>
+            <>
             <h1>Comic Jam! </h1>
-            <div className = "ButtonContainer">
-                <button onClick={ () => handleClick('CreateLobby')}>Create Lobby</button>
-                <button onClick = { () => handleClick('JoinGame')}>Join a Game</button> 
+            <div className="ButtonContainer">
+                <button onClick={() => handleClick('CreateLobby')}>Create Lobby</button>
+                <button onClick={() => handleClick('JoinGame')}>Join a Game</button>
             </div>
-        </>
-
+            </>
     );
 }
 
