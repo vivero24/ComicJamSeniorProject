@@ -4,7 +4,7 @@ import string
 from flask import Blueprint, abort, jsonify, request, session
 
 from .models import db, Game, Player
-from sqlalchemy import select
+from sqlalchemy import Null, select
 
 from .events import broadcast_lobby_update
 
@@ -76,29 +76,17 @@ def generate_game_code():
 #   json containing the fields:
 #   - numOfPlayers (required)
 #   - timeLimit (required)
-@main.route('/create-lobby', methods=['POST'])
+@main.route('/create-lobby', methods=['GET'])
 def create_lobby():
-    json = request.json
-
-    print(f"RECV: {json}")
-
     # TODO: handle case where this user already has a
     # session, delete player or game from database
 
-    # Register host in databse
-    player_cap = json['numOfPlayers']
-    time_limit = json['timeLimit']
-
-    game = Game(invite_code=generate_game_code(),
-                player_cap=player_cap,
-                time_limit_minutes=time_limit,
-                current_round=0,
-                rount_count=0,
-                players=[])
+    game = Game(invite_code=generate_game_code(), players=[])
 
     db.session.add(game)
     db.session.commit()
 
+    print(f"Created Lobby: {game.invite_code}")
     # Create new flask session for this host
     session['host_id'] = game.host_id
 

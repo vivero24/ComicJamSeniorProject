@@ -16,29 +16,32 @@ export default function PlayerLobby()
         };
 
         const handleSettingsUpdate = (json) => {
-            setInviteCode(json['inviteCode'])
+            setInviteCode(json['inviteCode']);
+        };
+
+        // Invoke anonymous "callback" function to acknowledge that the
+        // event was handld
+        const acknowledgeGameStart = (callback) => {
+            callback()
+            navigate('/PlayerGame');
         };
 
         socket.on('lobby-update', handleLobbyUpdate);
         socket.on('settings-update', handleSettingsUpdate);
-
-        // IMPORTANT: Only connect the websocket at this point!
-        // Flask sessions only update upon a new socket connection,
-        // so this compromise must be made unless we switch to server-side
-        // sessions
-        socket.connect()
+        socket.on('game-start-ack-requested', acknowledgeGameStart);
+    
+        socket.connect();
 
         return () => {
-            socket.off('lobby-update', handleLobbyUpdate)
-            socket.off('settings-update', handleSettingsUpdate)
+            socket.off('lobby-update', handleLobbyUpdate);
+            socket.off('settings-update', handleSettingsUpdate);
         }
     }, []);
 
     const onPlayerLeave = async () => {
-        await fetch('/api/leave-lobby')
-        socket.disconnect()
+        await fetch('/api/leave-lobby');
+        socket.disconnect();
         navigate('/');
-
     };
 
     console.log(players);

@@ -2,6 +2,7 @@
 import React, {useState, useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { socket } from '../socket.js'
 // NOTE: Perhaps naming this component to HostLobby should be in order, since
 // the documentation states it should also display the lobby contents alongside
 // the settings
@@ -15,41 +16,37 @@ export default function CreateLobby({ onDataSend })
 {
     const navigate = useNavigate();
 
+    const[inviteCode, setInviteCode] = useState("")
     const[numOfRounds, setNumOfRounds] = useState(0);
     const[numOfPlayers, setNumOfPlayers] = useState(0);
     const[timeLimit, setTimeLimit] = useState(0);
 
-    // Must be async so we don't naviate to the next page
-    // before the lobby is created
-    const onLobbySubmit = async () =>
-    {
-        const lobby =
-            {
-                numOfRounds: numOfRounds,
-                numOfPlayers: numOfPlayers,
-                timeLimit: timeLimit
-            };
+    useEffect(() => {
+        socket.connect();
 
-        await fetch('api/create-lobby', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(lobby),
-            credentials: 'include'
-        })
-        .then(res => res.json())
-        .then(data => {
-            console.log('Created lobby with invite code: ', data.invite_code);
-            navigate('/HostGame');
-            onDataSend(lobby, data.invite_code);
-        });
+        const handleSettingsUpdate = (json) => {
+            setInviteCode(json['inviteCode']);
+        };
+
+        socket.on('settings-update', handleSettingsUpdate);
+
+        return () => {
+            socket.off('settings-update', handleSettingsUpdate);
+        }
+    }, []);
+
+    // TODO: POST to update lobby settings whenever they are modified
+
+    const onStartGame = async () => {
+        socket.emit('host-started-game')
+
+        navigate('/HostGame')
     }
 
     return (
         <>
             <h1>Lobby Configuration</h1>
-            <h3>
-                Invite Code: 
-            </h3>
+            {inviteCode && <h3>Join Code: {inviteCode}</h3>}
             <div className="inline-flex-parent">
                 <div className = "menuContainer">
                     <div className = "inputRow">
@@ -72,7 +69,7 @@ export default function CreateLobby({ onDataSend })
                 </div>
             </div>
             <div>
-                <button id = "submitButton" name = "submitButton" onClick = {onLobbySubmit}>Start Game</button>
+                <button id = "submitButton" name = "submitButton" onClick = {onStartGame}>Start Game</button>
             </div>
         </>
     );
