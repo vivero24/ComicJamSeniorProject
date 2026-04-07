@@ -140,3 +140,70 @@ def leave_lobby():
     db.session.commit()
 
     return ''
+
+#Use the GET endpoint to return the list of comic folders
+@main.route('/list-comics', methods=['GET'])
+def list_comics():
+    os = __import__('os')
+
+    # All the comics are listed inside a folder named "comics"
+    comics_root = 'comics'
+
+    # If the directory doesn't exist, return an empty list instead of an error
+    if not os.path.exists(comics_root):
+        return {'comics': []}
+
+    #This collects all subfolders(each folder contains one comic)
+    comics = []
+    for name in os.listdir(comics_root):
+        folder_path = os.path.join(comics_root, name)
+        if os.path.isdir(folder_path):
+            comics.append(name)
+
+    # This returns the list of comic folder names
+    return {'comics': comics}
+    
+
+# GET endpoint that downloads a comic as a ZIP file
+@main.route('/download-comic', methods=['GET'])
+def download_comic(game_id, comic_id):
+    os = __import__('os')                  # For file paths and directory walking
+    zipfile = __import__('zipfile')        # Used for creating ZIP files
+    flask = __import__('flask')            # Necessary for the send_file method
+
+    
+    #This reads the JSON body
+    json = flask.request.json
+    comic_id = json.get('comicId')
+
+    if not comic_id:
+        abort(400)   # Bad request if missing
+
+    # Path to the comic folder
+    comic_folder = os.path.join('comics', comic_id)
+
+    # If the comic folder doesn't exist, returns a 404 error
+    if not os.path.exists(comic_folder):
+        abort(404)
+
+    # This creates a temporary ZIP file in /tmp
+    # /tmp is a temporary directory used by servers
+    zip_path = f"/tmp/{comic_id}.zip"
+
+    
+    #Creates the ZIP file and adds all comic pages to it
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        # Walks through the comic folder and add each file
+        for root, dirs, files in os.walk(comic_folder):
+            for file in files:
+                full_path = os.path.join(root, file)
+                arcname = os.path.relpath(full_path, comic_folder)
+                zipf.write(full_path, arcname)
+
+    # Send the ZIP file to the browser as a download
+    return flask.send_file(
+        zip_path,
+        mimetype='application/zip',
+        as_attachment=True,
+        download_name=f"{comic_id}.zip"
+    )
