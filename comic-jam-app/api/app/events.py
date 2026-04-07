@@ -18,9 +18,9 @@ def begin_game_loop():
 
     from .game_manager import manage_game_loop
 
-    # It is very important that the app be passed,
-    # otherwise the background task won't have access to the
-    # Flask app context and will throw errors.
+    # It is very important that the app be passed as a parameter here,
+    # otherwise the background task won't have access to the  Flask app 
+    # context and will throw errors.
     app = current_app._get_current_object() # # pyright: ignore[reportAttributeAccessIssue]
     socketio.start_background_task(manage_game_loop, session['host_id'], app)
 
@@ -50,15 +50,14 @@ def connect_handler():
 
         game = player.game
 
-        #print(f"Player {player.username} joined lobby {game.invite_code} with SID:{player.socket_id}")
+        current_app.logger.info(f"Player={player.username} joined Game={game.invite_code} with SID={player.socket_id}")
 
     elif 'host_id' in session:
         game = db.get_or_404(Game, session['host_id'])
 
-        print(f"Host connected to game {game.invite_code} with SID: {request.sid}") # # pyright: ignore[reportAttributeAccessIssue]
-        current_app.logger.info("TEST")
+        current_app.logger.info(f"Host connected to Game={game.invite_code} with SID={request.sid}") # # pyright: ignore[reportAttributeAccessIssue]
     else:
-        print("No ID in session, refusing connection")
+        current_app.logger.warning("User has no ID in session, refusing connection")
         return ConnectionRefusedError
 
     join_room(game.invite_code)
