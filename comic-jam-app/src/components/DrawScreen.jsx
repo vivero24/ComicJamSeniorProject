@@ -120,6 +120,9 @@ export default function DrawScreen()
             }
 
         }
+
+        // here we will insert functions to generate the markup (generateToolButtons, generateColorButtonsm
+        // generateBrushSizeButtons)
     }
 
     const canvasRef = useRef();
@@ -127,14 +130,16 @@ export default function DrawScreen()
     useEffect(() =>
     {
         const p5instance = new p5(sketch, canvasRef.current);
+        return () => p5instance.remove();
     }, []);
 
 
 
     return(
         <>
-        <div ref = {canvasRef}>
-        </div>
+
+        <div ref = {canvasRef}></div>
+        
         </>
     )
 }
