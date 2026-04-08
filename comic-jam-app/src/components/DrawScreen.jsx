@@ -16,11 +16,13 @@ export default function DrawScreen()
         brush.state = new_state;
     }
 
+    /*
     function clearCanvas(){
         background(background_details.color);
         brush.state = BrushState.BRUSH;
         //giveSelectedButtonOutline(document.getElementById("tool-button-container").children[0], "tool-button");
-    }        
+    }   
+    */     
 
     const BrushState = Object.freeze({
         BRUSH: "brush",
@@ -47,7 +49,7 @@ export default function DrawScreen()
         ["Circle", () => changeBrushState(BrushState.CIRCLE)],
         ["Triangle", () => changeBrushState(BrushState.TRIANGLE)],
         ["Eraser", () => changeBrushState(BrushState.ERASE)],
-        ["Clear Canvas", () => clearCanvas()],
+        ["Clear Canvas", () => p5Ref.current.clearCanvas()],
         ["Save Image", () => roundEnd()]
     ]
 
@@ -118,16 +120,23 @@ export default function DrawScreen()
                     break;
                 }
             }
+        }
 
+        p.clearCanvas = () =>
+        {
+            p.background(background_details.color);
+            brush.state = BrushState.BRUSH;
         }
     }
 
     const canvasRef = useRef();
+    const p5Ref = useRef();
 
     useEffect(() =>
     {
-        const p5instance = new p5(sketch, canvasRef.current);
-        return () => p5instance.remove();
+        p5Ref.current = new p5(sketch, canvasRef.current);
+        return () => p5Ref.current.remove();
+        
     }, []);
 
     return(
