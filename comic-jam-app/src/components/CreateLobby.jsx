@@ -23,25 +23,36 @@ export default function CreateLobby({ onDataSend })
     // before the lobby is created
     const onLobbySubmit = async () =>
     {
-        const lobby =
+        if (numOfRounds == 0 || numOfPlayers == 0 || timeLimit == 0)
+        {
+            window.alert("No values for the lobby can be 0");
+        }
+        else if (numOfPlayers == 1)
+        {
+            window.alert("Number of players cannot be 1");
+        }
+        else
+        {
+            const lobby =
             {
                 numOfRounds: numOfRounds,
                 numOfPlayers: numOfPlayers,
                 timeLimit: timeLimit
             };
 
-        await fetch('api/create-lobby', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(lobby),
-            credentials: 'include'
-        })
-        .then(res => res.json())
-        .then(data => {
-            console.log('Created lobby with invite code: ', data.invite_code);
-            navigate('/HostGame');
-            onDataSend(lobby, data.invite_code);
-        });
+            await fetch('api/create-lobby', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(lobby),
+                credentials: 'include'
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('Created lobby with invite code: ', data.invite_code);
+                navigate('/HostGame');
+                onDataSend(lobby, data.invite_code);
+            });
+        }
     }
 
     return (
