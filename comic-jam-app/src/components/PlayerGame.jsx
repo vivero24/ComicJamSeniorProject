@@ -1,4 +1,5 @@
 import React, {useState, useEffect, useRef} from 'react';
+import DrawScreen from './DrawScreen';
 
 export default function PlayerGame({ onDataSend })
 {
@@ -38,6 +39,7 @@ export default function PlayerGame({ onDataSend })
             </h1>
             <div className='menuContainer'>
                 Drawing Canvas Here
+                <DrawScreen/>
             </div>
             <button onClick = {submitDrawing}> Submit</button>
            <div>
