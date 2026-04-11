@@ -1,29 +1,11 @@
 import React, { useRef, useEffect } from 'react'; 
 import p5 from 'p5';
 
+// TODO: fix scoping issue with the setBrushSize, color, and state so it can work within the game component.
+
 export default function DrawScreen()
 {
-
-    function setBrushSize(new_size){
-        brush.size = new_size;
-    }
-
-    function setBrushColor(r,g, b){
-        brush.color = [r, g, b];
-    }
-
-    function changeBrushState(new_state){
-        brush.state = new_state;
-    }
-
-    /*
-    function clearCanvas(){
-        background(background_details.color);
-        brush.state = BrushState.BRUSH;
-        //giveSelectedButtonOutline(document.getElementById("tool-button-container").children[0], "tool-button");
-    }   
-    */     
-
+ 
     const BrushState = Object.freeze({
         BRUSH: "brush",
         SQUARE: "square",
@@ -32,11 +14,6 @@ export default function DrawScreen()
         ERASE: "erase"
     });
 
-    let brush = {
-        size : 4,
-        color : [0, 0, 0],
-        state : BrushState.BRUSH
-    }
 
     let background_details = {
         color : [255, 255, 255],
@@ -44,11 +21,11 @@ export default function DrawScreen()
     }
 
     let brush_tools_list = [
-        ["Paint Brush", () => changeBrushState(BrushState.BRUSH)],
-        ["Square", () => changeBrushState(BrushState.SQUARE)],
-        ["Circle", () => changeBrushState(BrushState.CIRCLE)],
-        ["Triangle", () => changeBrushState(BrushState.TRIANGLE)],
-        ["Eraser", () => changeBrushState(BrushState.ERASE)],
+        ["Paint Brush", () => p5Ref.current.changeBrushState(BrushState.BRUSH)],
+        ["Square", () => p5Ref.current.changeBrushState(BrushState.SQUARE)],
+        ["Circle", () => p5Ref.current.changeBrushState(BrushState.CIRCLE)],
+        ["Triangle", () => p5Ref.current.changeBrushState(BrushState.TRIANGLE)],
+        ["Eraser", () => p5Ref.current.changeBrushState(BrushState.ERASE)],
         ["Clear Canvas", () => p5Ref.current.clearCanvas()],
         ["Save Image", () => roundEnd()]
     ]
@@ -77,12 +54,15 @@ export default function DrawScreen()
 
     const sketch = (p) =>
     {
+        let brush = {
+            size : 4,
+            color : [0, 0, 0],
+            state : BrushState.BRUSH
+        }
+
         p.setup = () =>
         {
-            //need to find a way to add createToolButtons, createBrushSizeButtons, and generateColorButtons functions
-            //may not need to.
             p.createCanvas(background_details.size[0], background_details.size[1]);
-            //c.parent("canvas");
             //background function call here, not sure what it does yet or where it is
             p.background(background_details.color);
 
@@ -122,11 +102,27 @@ export default function DrawScreen()
             }
         }
 
+        p.setBrushSize = (size) =>
+        {
+            brush.size = size;
+        }
+        
+        p.setBrushColor = (r, g, b) =>
+        {
+            brush.color = [r, g, b];
+        }
+        
+        p.changeBrushState = (state) =>
+        {
+            brush.state = state;
+        }
+
         p.clearCanvas = () =>
         {
             p.background(background_details.color);
             brush.state = BrushState.BRUSH;
         }
+
     }
 
     const canvasRef = useRef();
@@ -149,7 +145,7 @@ export default function DrawScreen()
                 <div className = "toolSection">
                     {brush_tools_list.map((tool) =>
                     (
-                        <button className = "tool-button" onClick = {tool[1]}>{tool[0]}</button>
+                        <button className = "tool-button" onClick = {tool[1]} >  {tool[0]} </button>
                     ))};
                 </div>
 
@@ -159,7 +155,7 @@ export default function DrawScreen()
                 <div className = "toolSection">
                     {brush_size_list.map((size) =>
                     (
-                        <button className = "size-button" onClick = {() => setBrushSize(size[1])}>{size[0]}</button>
+                        <button className = "size-button" onClick = {() => p5Ref.current.setBrushSize(size[1])}>{size[0]}</button>
                     ))};
                 </div>
 
@@ -168,7 +164,7 @@ export default function DrawScreen()
                 <div className = "toolSection">
                     {color_list.map((color) =>
                     (
-                        <button className = "color-button" style = {{ backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})` }} onClick = {() => setBrushColor(color[0], color[1], color[2])}>
+                        <button className = "color-button" style = {{ backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})` }} onClick = {() => p5Ref.current.setBrushColor(color[0], color[1], color[2])}>
                             
                         </button>
                     ))};
@@ -176,8 +172,6 @@ export default function DrawScreen()
                 </div>
 
             </div>
-
-        
         </>
     )
 }
