@@ -144,66 +144,88 @@ def leave_lobby():
 #Use the GET endpoint to return the list of comic folders
 @main.route('/list-comics', methods=['GET'])
 def list_comics():
-    os = __import__('os')
+   flask = __import__('flask')
+   db = __import__('app').db
+   Player = __import__('app').Player
+   Comic = __import__('app').Comic
 
-    # All the comics are listed inside a folder named "comics"
-    comics_root = 'comics'
+   #The frontend must send: { "playerId": <id> }
+   json = flask.request.json
+   player_id = json.get('playerId')
 
-    # If the directory doesn't exist, return an empty list instead of an error
-    if not os.path.exists(comics_root):
-        return {'comics': []}
+   if not player_id:
+       return {"error": "playerId required"}, 400
 
-    #This collects all subfolders(each folder contains one comic)
-    comics = []
-    for name in os.listdir(comics_root):
-        folder_path = os.path.join(comics_root, name)
-        if os.path.isdir(folder_path):
-            comics.append(name)
+   #Fetch the requesting player
+   player = db.session.get(Player, player_id)
+   if not player:
+       return {"error": "Player not found"}, 404
 
-    # This returns the list of comic folder names
-    return {'comics': comics}
-    
+   # Get the game the player belongs to
+   game = player.game
+   if not game:
+       return {"comics": []}
+
+   # Collect comics from all players in the same game
+   comics = []
+   for p in game.players:
+       if p.comic:
+           comics.append({
+               "comicId": p.comic.comic_id,
+               "name": p.comic.name
+           })
+   return {"comics": comics}
+
 
 # GET endpoint that downloads a comic as a ZIP file
 @main.route('/download-comic', methods=['GET'])
 def download_comic(game_id, comic_id):
-    os = __import__('os')                  # For file paths and directory walking
-    zipfile = __import__('zipfile')        # Used for creating ZIP files
-    flask = __import__('flask')            # Necessary for the send_file method
+    flask = __import__('flask')
+    io = __import__('io')
+    zipfile = __import__('zipfile')
+    db = __import__('app').db
+    Player = __import__('app').Player
+    Comic = __import__('app').Comic
 
-    
-    #This reads the JSON body
+    # The frontend must send: { "playerId": <id>, "comicId": <id> }
     json = flask.request.json
+    player_id = json.get('playerId')
     comic_id = json.get('comicId')
 
-    if not comic_id:
-        abort(400)   # Bad request if missing
+    if not player_id or not comic_id:
+        return {"error": "playerId and comicId required"}, 400
 
-    # Path to the comic folder
-    comic_folder = os.path.join('comics', comic_id)
+    # Fetch the requesting player
+    player = db.session.get(Player, player_id)
+    if not player:
+        return {"error": "Player not found"}, 404
 
-    # If the comic folder doesn't exist, returns a 404 error
-    if not os.path.exists(comic_folder):
-        abort(404)
+    game = player.game
+    if not game:
+        return {"error": "Player is not in a game"}, 400
 
-    # This creates a temporary ZIP file in /tmp
-    # /tmp is a temporary directory used by servers
-    zip_path = f"/tmp/{comic_id}.zip"
+    # Fetch the comic
+    comic = db.session.get(Comic, comic_id)
+    if not comic:
+        return {"error": "Comic not found"}, 404
 
-    
-    #Creates the ZIP file and adds all comic pages to it
-    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        # Walks through the comic folder and add each file
-        for root, dirs, files in os.walk(comic_folder):
-            for file in files:
-                full_path = os.path.join(root, file)
-                arcname = os.path.relpath(full_path, comic_folder)
-                zipf.write(full_path, arcname)
+    # Ensure the comic belongs to a player in the same game
+    if comic.player.game_id != game.host_id:
+        return {"error": "Comic does not belong to this game"}, 403
 
-    # Send the ZIP file to the browser as a download
-    return flask.send_file(
-        zip_path,
-        mimetype='application/zip',
-        as_attachment=True,
-        download_name=f"{comic_id}.zip"
-    )
+    #Create ZIP in memory
+    memory_file = io.BytesIO()
+
+    with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for idx, panel in enumerate(comic.panels):
+            filename = f"panel_{idx+1}.png"
+            zipf.writestr(filename, panel.image)
+
+     memory_file.seek(0)
+
+     return flask.send_file(
+         memory_file,
+         mimetype='application/zip',
+         as_attachment=True,
+         download_name=f"{comic.name}.zip"
+     )
