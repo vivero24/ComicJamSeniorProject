@@ -1,28 +1,33 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 
 export default function PlayerGame({ onDataSend })
 {
     const[currRound, setCurrRound] = useState(0)
     const[totalRounds, setTotalRound] = useState(0)
-    const [initialTimeLimit, setInitialTimeLimit] = useState(30)
+    const [initialTimeLimit, setInitialTimeLimit] = useState(3)
     const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit)
 
-    //let timeLeft = initialTimeLimit;
-
-    function updateTimer()
+    const submitDrawing = async() =>
     {
-        //timeLeft --;
-        //prevTime is the current state value at the time
-        setTimeRemaining(prevTime => prevTime - 1);
-        console.log(timeRemaining);
+        //code to send drawing information to db
+        console.log('Drawing submitted');
     }
 
     useEffect(() =>
     {
-        //
-        const interval = setInterval(updateTimer, 1000);
-        return () => clearInterval(interval);
-    }, []);
+        if (timeRemaining <= 0)
+        {
+            submitDrawing();
+            return;
+        }
+
+       const interval = setInterval(() =>{
+        setTimeRemaining(prev => prev -1);
+       }, 1000)
+
+       return () => clearInterval(interval)
+
+    }, [timeRemaining]);
 
 
     return (
@@ -34,7 +39,7 @@ export default function PlayerGame({ onDataSend })
             <div className='menuContainer'>
                 Drawing Canvas Here
             </div>
-            <button>Submit</button>
+            <button onClick = {submitDrawing}> Submit</button>
            <div>
                 Round {currRound} of {totalRounds}
             </div>
