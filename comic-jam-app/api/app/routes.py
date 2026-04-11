@@ -140,3 +140,92 @@ def leave_lobby():
     db.session.commit()
 
     return ''
+
+#Use the GET endpoint to return the list of comic folders
+@main.route('/list-comics', methods=['GET'])
+def list_comics():
+   flask = __import__('flask')
+   db = __import__('app').db
+   Player = __import__('app').Player
+   Comic = __import__('app').Comic
+
+   #The frontend must send: { "playerId": <id> }
+   json = flask.request.json
+   player_id = json.get('playerId')
+
+   if not player_id:
+       return {"error": "playerId required"}, 400
+
+   #Fetch the requesting player
+   player = db.session.get(Player, player_id)
+   if not player:
+       return {"error": "Player not found"}, 404
+
+   # Get the game the player belongs to
+   game = player.game
+   if not game:
+       return {"comics": []}
+
+   # Collect comics from all players in the same game
+   comics = []
+   for p in game.players:
+       if p.comic:
+           comics.append({
+               "comicId": p.comic.comic_id,
+               "name": p.comic.name
+           })
+   return {"comics": comics}
+
+
+# GET endpoint that downloads a comic as a ZIP file
+@main.route('/download-comic', methods=['GET'])
+def download_comic(game_id, comic_id):
+    flask = __import__('flask')
+    io = __import__('io')
+    zipfile = __import__('zipfile')
+    db = __import__('app').db
+    Player = __import__('app').Player
+    Comic = __import__('app').Comic
+
+    # The frontend must send: { "playerId": <id>, "comicId": <id> }
+    json = flask.request.json
+    player_id = json.get('playerId')
+    comic_id = json.get('comicId')
+
+    if not player_id or not comic_id:
+        return {"error": "playerId and comicId required"}, 400
+
+    # Fetch the requesting player
+    player = db.session.get(Player, player_id)
+    if not player:
+        return {"error": "Player not found"}, 404
+
+    game = player.game
+    if not game:
+        return {"error": "Player is not in a game"}, 400
+
+    # Fetch the comic
+    comic = db.session.get(Comic, comic_id)
+    if not comic:
+        return {"error": "Comic not found"}, 404
+
+    # Ensure the comic belongs to a player in the same game
+    if comic.player.game_id != game.host_id:
+        return {"error": "Comic does not belong to this game"}, 403
+
+    #Create ZIP in memory
+    memory_file = io.BytesIO()
+
+    with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for idx, panel in enumerate(comic.panels):
+            filename = f"panel_{idx+1}.png"
+            zipf.writestr(filename, panel.image)
+
+     memory_file.seek(0)
+
+     return flask.send_file(
+         memory_file,
+         mimetype='application/zip',
+         as_attachment=True,
+         download_name=f"{comic.name}.zip"
+     )
