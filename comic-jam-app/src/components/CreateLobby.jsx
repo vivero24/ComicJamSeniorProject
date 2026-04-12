@@ -16,7 +16,6 @@ export default function CreateLobby({ onDataSend })
 
     const[inviteCode, setInviteCode] = useState("")
     const[numOfRounds, setNumOfRounds] = useState(0);
-    const[numOfPlayers, setNumOfPlayers] = useState(0);
     const[timeLimit, setTimeLimit] = useState(0);
 
     useEffect(() => {
@@ -25,7 +24,6 @@ export default function CreateLobby({ onDataSend })
         const handleSettingsUpdate = (json) => {
             setInviteCode(json['inviteCode']);
         };
-
         socket.on('settings-update', handleSettingsUpdate);
 
         return () => {
@@ -33,10 +31,31 @@ export default function CreateLobby({ onDataSend })
         }
     }, []);
 
-    // TODO: POST to update lobby settings whenever they are modified
+    // Run updateSettings() whenever timeLimit or numOfRounds are
+    // updated
+    useEffect(() => {
+        const updateSettings = async () => {
+
+            // NOTE: only sending timeLimit for now, waiting until
+            // settings are ironed out
+            const lobbySettings = {
+                timeLimit: timeLimit,
+                numRounds: numOfRounds
+            }
+
+            await fetch('/api/change-lobby-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(lobbySettings),
+                credentials: 'include'})
+        };
+
+        updateSettings();
+    }, [timeLimit, numOfRounds]);
 
     const onStartGame = async () => {
         socket.emit('host-started-game')
+
         if (numOfRounds == 0 || numOfPlayers == 0 || timeLimit == 0)
         {
             window.alert("No values for the lobby can be 0");
@@ -49,7 +68,6 @@ export default function CreateLobby({ onDataSend })
         {
             navigate('/HostGame')
         }
-
     }
 
     return (
@@ -60,17 +78,25 @@ export default function CreateLobby({ onDataSend })
                 <div className = "menuContainer">
                     <div className = "inputRow">
                         <label htmlFor = "numOfRounds" > Number of Rounds</label>
-                        <input type = "number" id = "numOfRounds" name = "numOfRounds" min = "1" max = "4" value = {numOfRounds} onChange={(e) => setNumOfRounds(e.target.value)}></input> <br></br>
+                        <input type = "number"
+                            id = "numOfRounds"
+                            name = "numOfRounds"
+                            min = "1"
+                            max = "4"
+                            value = {numOfRounds}
+                            onChange={e => { setNumOfRounds(e.target.value)}}>
+                        </input> <br></br>
                     </div>
-
-                    <div className = "inputRow">
-                        <label htmlFor = "numOfPlayers"> Number of Players</label>
-                        <input type = "number" id = "numOfPlayers" name = "numOfPlayers" min = "1" max = "4" value = {numOfPlayers} onChange = {(e) => setNumOfPlayers(e.target.value)} ></input> <br></br>
-                    </div>
-
                     <div className = "inputRow">
                         <label htmlFor = "timeLimit"> Round Time Limit</label>
-                        <input type = "number" id = "timeLimit" name = "timeLimit" min = "1" max = "10" value = {timeLimit} onChange = {(e) => setTimeLimit(e.target.value)}></input> <br></br>
+                        <input type = "number"
+                            id = "timeLimit"
+                            name = "timeLimit"
+                            min = "1"
+                            max = "10"
+                            value = {timeLimit}
+                            onChange={e => { setTimeLimit(e.target.value)}}>
+                        </input> <br></br>
                     </div>
                 </div>
                 <div className = "menuContainer">

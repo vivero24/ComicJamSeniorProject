@@ -7,6 +7,8 @@ export default function PlayerLobby()
     const navigate = useNavigate();
     const [players, setPlayers] = useState([]);
     const [inviteCode, setInviteCode] = useState('');
+    const [timeLimit, setTimeLimit] = useState(0);
+    const [numRounds, setNumRounds] = useState(0);
 
     useEffect(() => {
         const handleLobbyUpdate = (json) => {
@@ -16,6 +18,8 @@ export default function PlayerLobby()
 
         const handleSettingsUpdate = (json) => {
             setInviteCode(json['inviteCode']);
+            setTimeLimit(json['timeLimit']);
+            setNumRounds(json['numRounds']);
         };
 
         // Invoke anonymous "callback" function to acknowledge that the
@@ -48,18 +52,21 @@ export default function PlayerLobby()
         <>
             <h1>Player Lobby</h1>
             {inviteCode && <h3>Join Code: {inviteCode}</h3>}
+            <div className ="inline-flex-parent">
+                <div className = "menuContainer" >
+                    {players.map((player, index) => (
 
-            <div className = "menuContainer" >
+                        <div className = "playerCard" key = {player}>
+                            <h4>{player}</h4>
+                            <img src = "/defaultpfp.png" id = "defaultPicture" width = "40" height = "40"></img>
+                        </div>
 
-                {players.map((player, index) => (
-
-                    <div className = "playerCard" key = {player}>
-                        <h4>{player}</h4>
-                        <img src = "/defaultpfp.png" id = "defaultPicture" width = "40" height = "40"></img>
-                    </div>
-
-                ))}
-
+                    ))}
+                </div>
+                <div className = "menuContainer">
+                    <div>Rounds: {numRounds}</div>
+                    <div>Time Limit: {timeLimit} minutes</div>
+                </div>
             </div>
 
             <div className = "buttonContainer">
