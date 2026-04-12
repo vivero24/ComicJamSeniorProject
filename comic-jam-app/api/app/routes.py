@@ -6,7 +6,7 @@ from flask import Blueprint, abort, current_app, jsonify, request, session
 from .models import db, Game, Player
 from sqlalchemy import select
 
-from .events import broadcast_lobby_update
+from .events import broadcast_lobby_update, broadcast_settings_update
 
 main = Blueprint("main", __name__, url_prefix='/api')
 
@@ -21,9 +21,11 @@ main = Blueprint("main", __name__, url_prefix='/api')
 # object created in this endpoint.
 #
 # Expected POST request body:
-#   json containing the fields:
-#   - userName (required)
-#   - joinCode (required)
+#   JSON:
+#   {
+#       "userName": String,
+#       "joinCode": String
+#   }
 @main.route('/join-lobby', methods=['POST'])
 def join_lobby():
     json = request.json
@@ -124,19 +126,30 @@ def leave_lobby():
     return ''
 
 # /api/change-lobby-settings
+# POST endpoint called when a host updates the settings of their lobby
+#
+# Updates the game's settings and broadcasts a 'settings-update' to all
+# players in the lobby
 #
 # Expected POST request body:
-#   json containing the fields:
-#       timeLimit - required
-#
-# NOTE: other fields to be determined
+#   JSON:
+#   {
+#       "timeLimit": Integer,
+#       "numRounds": Integer
+#       # NOTE: Other fields TBD
+#   }
 @main.route('/change-lobby-settings', methods=['POST'])
 def change_lobby_settings():
     if 'host_id' not in session:
         return 'Error: user is not the host of a lobby', 403
 
     game = db.get_or_404(Game, session['host_id'])
-    game.time_limit_minutes = request.json['roundTimeLimit']
+    game.time_limit_minutes = request.json['timeLimit']
+    game.rount_count = request.json['numRounds']
     db.session.commit()
+
+    current_app.logger.info(f"Game={game.invite_code}'s settings updated to time_limit={game.time_limit_minutes}")
+
+    broadcast_settings_update(game) 
 
     return ''
