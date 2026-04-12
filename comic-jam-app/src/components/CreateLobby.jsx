@@ -55,7 +55,19 @@ export default function CreateLobby({ onDataSend })
 
     const onStartGame = async () => {
         socket.emit('host-started-game')
-        navigate('/HostGame')
+
+        if (numOfRounds == 0 || numOfPlayers == 0 || timeLimit == 0)
+        {
+            window.alert("No values for the lobby can be 0");
+        }
+        else if (numOfPlayers == 1)
+        {
+            window.alert("Number of players cannot be 1");
+        }
+        else
+        {
+            navigate('/HostGame')
+        }
     }
 
     return (

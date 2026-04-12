@@ -33,14 +33,15 @@ def join_lobby():
     # TODO: handle case where this user already has a
     # session, delete player or game from database
     # Validate invite code
-    requested_invite_code = json['joinCode']
+    requested_invite_code = json['joinCode'].upper()
 
-    game = db.first_or_404(select(Game).where(Game.invite_code == requested_invite_code))
-    
-    db.session.execute(select(Game).where(Game.invite_code == requested_invite_code)).one()
+    game = db.session.scalar(select(Game).where(Game.invite_code == requested_invite_code))
+    if game is None:
+        return jsonify({'error': 'Lobby not found'}), 404
+
     # Return 403: Forbidden if lobby is full
-    #if game.player_cap == len(game.players):
-    #abort(403)
+    if len(game.players) >= game.player_cap:
+        return jsonify({'error': 'Lobby is full'}), 403
 
     # Register player in database
     username = json['userName']
