@@ -4,11 +4,6 @@ export default function Home()
 {
     const navigate = useNavigate();
 
-    function handleClick(componentName) {
-
-        navigate(`/${componentName}`);
-    };
-
     // Must be async so we don't naviate to the next page
     // before the lobby is created
     const createLobby = async () => {
@@ -30,14 +25,13 @@ export default function Home()
     }
 
     return(
-        <>
+            <>
             <h1>Comic Jam! </h1>
             <div className = "ButtonContainer">
                 <button onClick={createLobby}>Create Lobby</button>
                 <button onClick={navigateToJoinGame}>Join a Game</button> 
             </div>
-        </>
-
+            </>
     );
 }
 

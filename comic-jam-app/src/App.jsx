@@ -11,6 +11,7 @@ import Downloads from './components/Downloads';
 
 import { socket } from './socket';
 import { useState, useEffect } from 'react';
+import DrawScreen from './components/DrawScreen';
 
 function App() //main root component, ties all other components in here
 {
@@ -77,6 +78,7 @@ function App() //main root component, ties all other components in here
                 <Route path = "/PlayerGame" element = { <PlayerGame/>} />
                 <Route path = "/Showcase" element = { <Showcase/>} />
                 <Route path = "/Downloads" element = { <Downloads/>} />
+                <Route path = "/DrawScreen" element = {<DrawScreen/>}/>
             </Routes>
         </BrowserRouter>
 

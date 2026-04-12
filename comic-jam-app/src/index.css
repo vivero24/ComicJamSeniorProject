@@ -1,12 +1,16 @@
 body
 {
+    margin: 0;
+    width: 100vw;
+    height: 100vh;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: rgb(0, 0, 0);
-    background-color: rgb(75, 75, 75);
-    text-align: center;
     display: flex;
+    text-align: center;
     justify-content: center;
-    align-items: center;
+    background-image: url("assets/background.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: repeat;
 }
 
 .buttonContainer
@@ -49,7 +53,7 @@ button
     border: none;
     border-radius: 5px;
     background-color: rgb(100, 100, 100);
-    color: white;
+    color: black;
     cursor: pointer;
     transition: background-color 0.3s;
     width: 100px;
@@ -96,4 +100,84 @@ input
 {
     display: flex;
     justify-content: right;
+}
+
+#canvas-container {
+    width: 80vw;
+    height: 80vh;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgb(0, 0, 0);
+    display: flex;
+    overflow: hidden;
+}
+
+    #brush-tools {
+    width: 35vw;
+    background: #f4f4f4;
+    padding: 20px;
+    box-sizing: border-box;
+    border-right: 1px solid #ddd;
+}
+
+#canvas {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #ccc;
+    }
+
+.tool-section {
+    margin-bottom: 20px;
+}
+
+.separator {
+    height: 3px;
+    background: #000000;
+    margin: 12px 0;
+}
+
+.button-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
+.tool-button {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #aaa;
+    background: #fff;
+    cursor: pointer;
+    text-align: center;
+}
+
+.size-button {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #aaa;
+    background: #fff;
+    cursor: pointer;
+    text-align: center;
+}
+
+.color-button {
+    width: 5vw;
+    height: 5vw;
+}
+
+@font-face {
+    font-family: "Sketch";
+    src: url("assets/fonts/SketchBook-B5pB.ttf") format("truetype");
+}
+
+.title-text {
+    font-family: "Sketch";
+    font-size: clamp(18px, 8vw, 64px);
+}
+
+.selected {
+    border: 3px solid #4a90e2 !important;
 }
