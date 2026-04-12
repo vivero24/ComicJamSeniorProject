@@ -17,9 +17,14 @@ export default function PlayerGame()
 
     const onDrawingSubmit = async(drawingInfo) =>
     {
-        //code to send drawing information to db
         console.log('Drawing submitted');
-        console.log(drawingInfo);
+
+        // Send dataURL of image to server
+        await fetch('api/submit-panel', {
+            method: 'POST',
+            body: drawingInfo,
+            credentials: 'include'
+        })
     }
 
     useEffect(() => {
@@ -37,11 +42,13 @@ export default function PlayerGame()
         }
 
         const handleGameEnd = (callback) => {
+            drawScreenRef.current.submitDrawing();
             callback()
             navigate('/Downloads');
         }
 
         const handleRoundEnd = (callback) => {
+            drawScreenRef.current.submitDrawing();
             callback()
         }
 
@@ -60,15 +67,7 @@ export default function PlayerGame()
             socket.off('game-end', handleGameEnd);
             clearInterval(interval);
         }
-    }, [timeRemaining])
-
-    useEffect(() =>{
-        if (timeRemaining <= 0)
-        {
-            drawScreenRef.current.submitDrawing();
-            return;
-        }
-    }, [timeRemaining])
+    }, [])
 
     return (
         <>

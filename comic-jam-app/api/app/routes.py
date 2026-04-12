@@ -3,7 +3,7 @@ import string
 
 from flask import Blueprint, abort, current_app, jsonify, request, session
 
-from .models import db, Game, Player
+from .models import Panel, db, Game, Player, Comic
 from sqlalchemy import select
 
 from .events import broadcast_lobby_update, broadcast_settings_update
@@ -46,17 +46,21 @@ def join_lobby():
     # Register player in database
     username = json['userName']
 
-    player = Player(username=username, game_id=game.host_id, game=game)
+    player = Player(username=username,
+                    game_id=game.host_id,
+                    game=game,
+                    owned_comic=None,
+                    assigned_comic_id=None)
 
     db.session.add(player)
     db.session.commit()
-    
+
     # Create new flask session for this player
     session['player_id'] = player.player_id
 
     # Broadcast lobby-update event,
     # namespace parameter is required when emitting an event in a REST endpoint
-    # TODO: Place users in rooms so this data isn't sent to users in other lobby 
+
 
     return jsonify({'invite_code': requested_invite_code})
 
@@ -84,7 +88,7 @@ def create_lobby():
     db.session.add(game)
     db.session.commit()
 
-    current_app.logger.info(f"Game={game.invite_code} created.")
+    current_app.logger.debug(f"Game={game.invite_code} created.")
     # Create new flask session for this host
     session['host_id'] = game.host_id
 
@@ -107,7 +111,7 @@ def leave_lobby():
         player = db.get_or_404(Player, session['player_id'])
         game = player.game
 
-        current_app.logger.info(f"Player={player.username} left Game={game.invite_code}, deleting...")
+        current_app.logger.debug(f"Player={player.username} left Game={game.invite_code}, deleting...")
         db.session.delete(player)
         session.pop('player_id')
 
@@ -116,7 +120,7 @@ def leave_lobby():
         # TODO: handle game deletion, maybe place host deletion in a different
         # endpoint entirely? /api/close-lobby
         game = db.get_or_404(Game, session['host_id'])
-        current_app.logger.info(f"Host closed Game={game.invite_code}, deleting...")
+        current_app.logger.debug(f"Host closed Game={game.invite_code}, deleting...")
         db.session.delete(game)
         session.pop('host_id')
     else:
@@ -142,7 +146,7 @@ def leave_lobby():
 @main.route('/change-lobby-settings', methods=['POST'])
 def change_lobby_settings():
     if 'host_id' not in session:
-        return 'Error: user is not the host of a lobby', 403
+        return 'Error: User is not the host of a lobby', 403
 
     game = db.get_or_404(Game, session['host_id'])
     game.time_limit_minutes = request.json['timeLimit']
@@ -152,5 +156,42 @@ def change_lobby_settings():
     current_app.logger.info(f"Game={game.invite_code}'s settings updated to time_limit={game.time_limit_minutes}")
 
     broadcast_settings_update(game) 
+
+    return ''
+
+# /api/submit-panel
+# POST endpoint called when a player submits the panel they were assigned
+# during a round.
+#
+# Expected POST request body:
+#   dataURL representing a PNG
+@main.route('/submit-panel', methods=['POST'])
+def submit_panel():
+    if 'player_id' not in session:
+        return 'Error: user is not a Player', 403
+
+    player = db.get_or_404(Player, session['player_id'])
+
+    if player.assigned_comic_id is None:
+        return "Error: Player does not have a comic assigned.", 400
+
+
+    comic = db.get_or_404(Comic, player.assigned_comic_id)
+    image_data = request.get_data()
+
+    panel = Panel(comic_id=comic.comic_id,
+                  comic=comic,
+                  image=image_data)
+
+    comic.completed_panels.append(panel)
+
+    db.session.add(panel)
+
+    # Clear assignment to indicate player submitted
+    player.assigned_comic_id = None
+
+    db.session.commit()
+
+    current_app.logger.debug(f"Player={player.username} submitted panel for Comic={comic.comic_name}")
 
     return ''
