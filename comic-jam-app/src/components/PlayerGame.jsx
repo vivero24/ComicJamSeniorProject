@@ -11,6 +11,7 @@ export default function PlayerGame({ onDataSend })
     const submitDrawing = async() =>
     {
         //code to send drawing information to db
+        //to do: do a fetch
         console.log('Drawing submitted');
     }
 
