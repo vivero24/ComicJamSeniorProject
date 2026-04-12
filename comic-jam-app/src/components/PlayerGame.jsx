@@ -12,7 +12,7 @@ export default function PlayerGame()
 
     const[currRound, setCurrRound] = useState(0)
     const[totalRounds, setTotalRounds] = useState(0)
-    const [initialTimeLimit, setInitialTimeLimit] = useState(3)
+    const [initialTimeLimit, setInitialTimeLimit] = useState(15)
     const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit)
 
     const onDrawingSubmit = async(drawingInfo) =>
@@ -45,12 +45,7 @@ export default function PlayerGame()
             callback()
         }
 
-                if (timeRemaining <= 0)
-        {
-            drawScreenRef.current.submitDrawing();
-            return;
-        }
-
+       
        const interval = setInterval(() =>{
         setTimeRemaining(prev => prev -1);
        }, 1000)
@@ -67,6 +62,13 @@ export default function PlayerGame()
         }
     }, [timeRemaining])
 
+    useEffect(() =>{
+        if (timeRemaining <= 0)
+        {
+            drawScreenRef.current.submitDrawing();
+            return;
+        }
+    }, [timeRemaining])
 
     return (
         <>
