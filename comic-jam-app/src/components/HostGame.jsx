@@ -6,8 +6,12 @@ export default function HostGame({ onDataSend })
     const[totalRounds, setTotalRound] = useState(0)
     const[initialTimeLimit, setInitialTimeLimit] = useState(30)
     const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit)
-   
-    // Rudimentary timer
+
+    // TODO:
+    // - Implement websocket listeners for round-start, round-end, game-end events
+    // similar to PlayerGame page to update game state as rounds progress
+
+    // Rudimentary timer, to be replaced
     useEffect(() => {
         let interval = setInterval(() => {
             setTimeRemaining((timeRemaining) => {
@@ -22,10 +26,6 @@ export default function HostGame({ onDataSend })
         return () => clearInterval(interval);
     }, []);
 
-    // TODO:
-    // - listeners for round start, round end, game end events
-    // - countdown for time remaining
-    // - autosubmit when timer expires
     return (
         <>
             <h1> Host Game Debug </h1>

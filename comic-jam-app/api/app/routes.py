@@ -1,7 +1,7 @@
 import random
 import string
 
-from flask import Blueprint, abort, jsonify, request, session
+from flask import Blueprint, abort, current_app, jsonify, request, session
 
 from .models import db, Game, Player
 from sqlalchemy import select
@@ -27,15 +27,15 @@ main = Blueprint("main", __name__, url_prefix='/api')
 @main.route('/join-lobby', methods=['POST'])
 def join_lobby():
     json = request.json
-    print(f"RECV: {json}")
 
     # TODO: handle case where this user already has a
     # session, delete player or game from database
-
     # Validate invite code
     requested_invite_code = json['joinCode']
-    game = db.first_or_404(select(Game).where(Game.invite_code == requested_invite_code))
 
+    game = db.first_or_404(select(Game).where(Game.invite_code == requested_invite_code))
+    
+    db.session.execute(select(Game).where(Game.invite_code == requested_invite_code)).one()
     # Return 403: Forbidden if lobby is full
     #if game.player_cap == len(game.players):
     #abort(403)
@@ -47,7 +47,7 @@ def join_lobby():
 
     db.session.add(player)
     db.session.commit()
-
+    
     # Create new flask session for this player
     session['player_id'] = player.player_id
 
@@ -64,41 +64,24 @@ def generate_game_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
 
 # /api/create-lobby
-# POST endpoint called when a user creates a game lobby.
-# Associates the ID of a Game object with the user's Flask session,
+# GET endpoint to be called when a user creates a game lobby.
+# Creates and associates the ID of a Game object with the user's Flask session,
 # accessible with the key 'host_id'.
 #
 # If the user is already associated with an existing Game or Player
 # in the database, that object will be deleted and replaced with the Game
 # object created in this endpoint.
-#
-# Expected POST request body:
-#   json containing the fields:
-#   - numOfPlayers (required)
-#   - timeLimit (required)
-@main.route('/create-lobby', methods=['POST'])
+@main.route('/create-lobby', methods=['GET'])
 def create_lobby():
-    json = request.json
-
-    print(f"RECV: {json}")
-
     # TODO: handle case where this user already has a
     # session, delete player or game from database
 
-    # Register host in databse
-    player_cap = json['numOfPlayers']
-    time_limit = json['timeLimit']
-
-    game = Game(invite_code=generate_game_code(),
-                player_cap=player_cap,
-                time_limit_minutes=time_limit,
-                current_round=0,
-                rount_count=0,
-                players=[])
+    game = Game(invite_code=generate_game_code(), players=[])
 
     db.session.add(game)
     db.session.commit()
 
+    current_app.logger.info(f"Game={game.invite_code} created.")
     # Create new flask session for this host
     session['host_id'] = game.host_id
 
@@ -121,7 +104,7 @@ def leave_lobby():
         player = db.get_or_404(Player, session['player_id'])
         game = player.game
 
-        print(f"Deleting player: username={player.username}")
+        current_app.logger.info(f"Player={player.username} left Game={game.invite_code}, deleting...")
         db.session.delete(player)
         session.pop('player_id')
 
@@ -130,8 +113,7 @@ def leave_lobby():
         # TODO: handle game deletion, maybe place host deletion in a different
         # endpoint entirely? /api/close-lobby
         game = db.get_or_404(Game, session['host_id'])
-        print(f"Deleting game: invite_code={game.invite_code}")
-
+        current_app.logger.info(f"Host closed Game={game.invite_code}, deleting...")
         db.session.delete(game)
         session.pop('host_id')
     else:
