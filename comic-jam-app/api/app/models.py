@@ -29,14 +29,33 @@ class Player(db.Model, MappedAsDataclass):
     game_id: Mapped[int] = mapped_column(ForeignKey('game.host_id'), nullable=True)
     game: Mapped["Game"] = relationship(back_populates='players')
 
+    # A player has exactly one comic
+    comic: Mapped["Comic"] = relationship(back_populates='player', uselist=False)
+
 
 class Comic(db.Model, MappedAsDataclass):
+    __tablename__ = 'comic'
+    
     comic_id:  Mapped[int] = mapped_column(primary_key=True, autoincrement=True, init=False)
-    #sketch_panels
-    #completed_panels
+
+    # Required by routes.py
+    name: Mapped[str]
+
+    # Connect Comic to Player (one-to-one)
+    player_id: Mapped[int] = mapped_column(ForeignKey('player.player_id'), unique=True)
+    player: Mapped["Player"] = relationship(back_populates='comic')
+
+    # Comic has many panels
+    panels: Mapped[List["Panel"]] = relationship(back_populates='comic')
 
 class Panel(db.Model, MappedAsDataclass):
+    __tablename__ = 'panel'
+    
     panel_id:  Mapped[int] = mapped_column(primary_key=True, autoincrement=True, init=False)
     image: Mapped[str] = mapped_column(LargeBinary)
+
+    # Connect Panel to the Comic
+    comic_id: Mapped[int] = mapped_column(ForeignKey('comic.comic_id'))
+    comic: Mapped["Comic"] = relationship(back_populates='panels')
 
 
