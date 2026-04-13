@@ -1,11 +1,22 @@
-import React, { useRef, useEffect } from 'react'; 
+import { useRef, useEffect, useImperativeHandle} from 'react'; 
 import p5 from 'p5';
 
-// TODO: fix scoping issue with the setBrushSize, color, and state so it can work within the game component.
-
-export default function DrawScreen()
+export default function DrawScreen({onDrawingSubmit, ref})
 {
- 
+    
+    const submitDrawing = () =>{
+        const imageData = p5Ref.current.getImageData();
+        onDrawingSubmit(imageData)
+    }  
+     
+
+    useImperativeHandle(ref, () =>({
+        submitDrawing: submitDrawing
+        }
+    ));
+
+
+
     const BrushState = Object.freeze({
         BRUSH: "brush",
         SQUARE: "square",
@@ -123,10 +134,16 @@ export default function DrawScreen()
             brush.state = BrushState.BRUSH;
         }
 
+        p.getImageData = () =>
+        {
+            return p.canvas.toDataURL();
+        }
+
     }
 
     const canvasRef = useRef();
     const p5Ref = useRef();
+
 
     useEffect(() =>
     {

@@ -1,18 +1,26 @@
 
 import DrawScreen from './DrawScreen';
-import React, {useState, useEffect} from 'react';
+import {useState, useEffect, useRef} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { socket } from '../socket.js'
 
 
-export default function PlayerGame({ onDataSend })
+export default function PlayerGame()
 {
+    const drawScreenRef = useRef();
     const navigate = useNavigate()
 
     const[currRound, setCurrRound] = useState(0)
     const[totalRounds, setTotalRounds] = useState(0)
     const [initialTimeLimit, setInitialTimeLimit] = useState(3)
     const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit)
+
+    const onDrawingSubmit = async(drawingInfo) =>
+    {
+        //code to send drawing information to db
+        console.log('Drawing submitted');
+        console.log(drawingInfo);
+    }
 
     useEffect(() => {
         // TODO:
@@ -39,7 +47,7 @@ export default function PlayerGame({ onDataSend })
 
                 if (timeRemaining <= 0)
         {
-            submitDrawing();
+            drawScreenRef.current.submitDrawing();
             return;
         }
 
@@ -68,9 +76,9 @@ export default function PlayerGame({ onDataSend })
             </h1>
             <div className='menuContainer'>
                 Drawing Canvas Here
-                <DrawScreen/>
+                <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/>
             </div>
-            <button onClick = {submitDrawing}> Submit</button>
+            <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button>
            <div>
                 Round {currRound} of {totalRounds}
             </div>
