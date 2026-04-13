@@ -13,13 +13,15 @@ class Game(db.Model, MappedAsDataclass):
 
     host_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, init=False)
     invite_code: Mapped[str] = mapped_column(unique=True)
-    player_cap: Mapped[int]
-    rount_count: Mapped[int]
-    current_round: Mapped[int]
-    time_limit_minutes: Mapped[int]
 
     players: Mapped[List["Player"]] = relationship(back_populates='game')
-   
+    num_players_unsubmitted: Mapped[int] = mapped_column(default=0)
+    player_cap: Mapped[int] = mapped_column(default=4)
+    rount_count: Mapped[int] = mapped_column(default=4)
+    #current_round: Mapped[int] = mapped_column(default=0)
+    time_limit_minutes: Mapped[int] = mapped_column(default=1)
+
+
 class Player(db.Model, MappedAsDataclass):
     __tablename__ = 'player'
 
@@ -29,6 +31,7 @@ class Player(db.Model, MappedAsDataclass):
     game_id: Mapped[int] = mapped_column(ForeignKey('game.host_id'), nullable=True)
     game: Mapped["Game"] = relationship(back_populates='players')
 
+    socket_id: Mapped[str] = mapped_column(default='')
 
 class Comic(db.Model, MappedAsDataclass):
     comic_id:  Mapped[int] = mapped_column(primary_key=True, autoincrement=True, init=False)
@@ -38,5 +41,3 @@ class Comic(db.Model, MappedAsDataclass):
 class Panel(db.Model, MappedAsDataclass):
     panel_id:  Mapped[int] = mapped_column(primary_key=True, autoincrement=True, init=False)
     image: Mapped[str] = mapped_column(LargeBinary)
-
-

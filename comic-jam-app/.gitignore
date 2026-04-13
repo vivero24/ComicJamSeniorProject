@@ -28,3 +28,4 @@ __pycache__/
 instance/
 .venv
 venv
+flask_session
