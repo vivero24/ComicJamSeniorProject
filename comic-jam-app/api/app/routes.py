@@ -181,7 +181,7 @@ def list_comics():
 @main.route('/download-comic', methods=['GET'])
 def download_comic(game_id, comic_id):
     # Authorization via session
-    player_id = session.get('playerId')
+    player_id = session.get('player_id')
     host_id = session.get('host_id')
 
     if not player_id and not host_id:
@@ -208,7 +208,7 @@ def download_comic(game_id, comic_id):
 
     # Ensure the comic belongs to a player in the same game
     if not comic.player or comic.player.game_id != game.host_id:
-        return {"error: "Comic does not belong to this game"}, 403
+        return {"error": "Comic does not belong to this game"}, 403
 
     # Create ZIP in memory
     memory_file = io.BytesIO()
