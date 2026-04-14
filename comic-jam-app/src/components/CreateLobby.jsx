@@ -50,7 +50,8 @@ export default function CreateLobby({ onDataSend })
     }
 
 
-
+    // NOTE: Update settings logic can be avoided by sending the game settings within this
+    // socket event. The game assumes that all players can see the host's screen anyway
     const onStartGame = async () => {
         socket.emit('host-started-game')
 

@@ -137,7 +137,6 @@ def change_lobby_settings():
 
     game = db.get_or_404(Game, session['host_id'])
     game.time_limit_minutes = request.json['roundTimeLimit']
-    
-
+    db.session.commit()
 
     return ''
