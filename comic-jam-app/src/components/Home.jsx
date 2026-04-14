@@ -26,10 +26,12 @@ export default function Home()
 
     return(
             <>
-            <h1>Comic Jam! </h1>
-            <div className = "ButtonContainer">
-                <button onClick={createLobby}>Create Lobby</button>
-                <button onClick={navigateToJoinGame}>Join a Game</button> 
+            <div id="container">
+                <h1>Welcome to Comic Jam!</h1>
+                <div className = "ButtonContainer">
+                    <button className="button-start" onClick={createLobby}>Create a Lobby</button>
+                    <button className="button-start" onClick={navigateToJoinGame}>Join a Lobby</button> 
+                </div>
             </div>
             </>
     );
