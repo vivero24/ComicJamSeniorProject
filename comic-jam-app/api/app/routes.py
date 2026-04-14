@@ -122,3 +122,22 @@ def leave_lobby():
     db.session.commit()
 
     return ''
+
+# /api/change-lobby-settings
+#
+# Expected POST request body:
+#   json containing the fields:
+#       timeLimit - required
+#
+# NOTE: other fields to be determined
+@main.route('/change-lobby-settings', methods=['POST'])
+def change_lobby_settings():
+    if 'host_id' not in session:
+        return 'Error: user is not the host of a lobby', 403
+
+    game = db.get_or_404(Game, session['host_id'])
+    game.time_limit_minutes = request.json['roundTimeLimit']
+    
+
+
+    return ''

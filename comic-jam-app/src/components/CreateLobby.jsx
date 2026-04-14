@@ -33,7 +33,23 @@ export default function CreateLobby({ onDataSend })
         }
     }, []);
 
-    // TODO: POST to update lobby settings whenever they are modified
+    const updateSettings = async () => {
+
+        // NOTE: only sending timeLimit for now, waiting until
+        // settings are ironed out
+        const lobbySettings = {
+            timeLimit: timeLimit
+        }
+
+        fetch('/api/change-lobby-settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(player),
+            credentials: 'include'})
+
+    }
+
+
 
     const onStartGame = async () => {
         socket.emit('host-started-game')
