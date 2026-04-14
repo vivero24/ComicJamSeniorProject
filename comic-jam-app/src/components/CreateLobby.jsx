@@ -15,6 +15,7 @@ export default function CreateLobby({ onDataSend })
     const navigate = useNavigate();
 
     const[inviteCode, setInviteCode] = useState("")
+    const[players, setPlayers] = useState([]);
     const[numOfRounds, setNumOfRounds] = useState(0);
     const[numOfPlayers, setNumOfPlayers] = useState(0);
     const[timeLimit, setTimeLimit] = useState(0);
@@ -22,13 +23,19 @@ export default function CreateLobby({ onDataSend })
     useEffect(() => {
         socket.connect();
 
+        const handleLobbyUpdate = (usernames) => {
+            setPlayers(usernames);
+        };
+
         const handleSettingsUpdate = (json) => {
             setInviteCode(json['inviteCode']);
         };
 
+        socket.on('lobby-update', handleLobbyUpdate);
         socket.on('settings-update', handleSettingsUpdate);
 
         return () => {
+            socket.off('lobby-update', handleLobbyUpdate);
             socket.off('settings-update', handleSettingsUpdate);
         }
     }, []);
@@ -63,7 +70,14 @@ export default function CreateLobby({ onDataSend })
                     </div>
                 </div>
                 <div className = "menuContainer">
-                    Lobby View Here
+                    <h4>Players Joined</h4>
+                    {players.length === 0 && <p>No players joined yet.</p>}
+                    {players.map((player) => (
+                        <div className = "playerCard" key = {player}>
+                            <h4>{player}</h4>
+                            <img src = "/defaultpfp.png" id = "defaultPicture" width = "40" height = "40"></img>
+                        </div>
+                    ))}
                 </div>
             </div>
             <div>
