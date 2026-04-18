@@ -1,9 +1,7 @@
-
 import DrawScreen from './DrawScreen';
 import {useState, useEffect, useRef} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { socket } from '../socket.js'
-
 
 export default function PlayerGame()
 {
@@ -15,8 +13,7 @@ export default function PlayerGame()
     const [initialTimeLimit, setInitialTimeLimit] = useState(15)
     const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit)
 
-    const onDrawingSubmit = async(drawingInfo) =>
-    {
+    const onDrawingSubmit = async(drawingInfo) => {
         console.log('Drawing submitted');
 
         // Send dataURL of image to server
@@ -52,10 +49,9 @@ export default function PlayerGame()
             callback()
         }
 
-       
-       const interval = setInterval(() =>{
-        setTimeRemaining(prev => prev -1);
-       }, 1000)
+        const interval = setInterval(() =>{
+            setTimeRemaining(prev => prev -1);
+        }, 1000);
 
         socket.on('round-start', handleRoundStart);
         socket.on('round-end', handleRoundEnd);
@@ -71,30 +67,18 @@ export default function PlayerGame()
 
     return (
         <>
+            <div id="headerContainer">
+                <div className="inputRow">
+                    <h1>Player Game Debug</h1>
+                    <div>Round {currRound} of {totalRounds}</div>
+                    <div>Time Remaining: {timeRemaining}</div>
+                    <div>Players Still drawing:</div>
+                    <div>Players Submitted:</div>
+                </div>
+            </div>
 
-            <h1>
-                Player Game Debug
-            </h1>
-            <div className='menuContainer'>
-                Drawing Canvas Here
-                <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/>
-            </div>
-            <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button>
-           <div>
-                Round {currRound} of {totalRounds}
-            </div>
-            <div>
-                
-                Time Remaining: {timeRemaining}
-            </div>
-            <div>
-
-                Players Still drawing:
-            </div>
-            <div>
-                Players Submitted:
-            </div>
+            <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/>
+            <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button> 
         </>
-
     );
 }
