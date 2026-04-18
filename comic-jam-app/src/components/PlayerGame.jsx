@@ -5,20 +5,11 @@ import { socket } from '../socket.js'
 
 function WaitingOverlay()
 {
-    return
-    <>
+    return<>
         <h4>Waiting for other players..</h4>
     </>
 }
 
-function Submitted(isSubmitted)
-{
-    
-    if (isSubmitted)
-    {
-        return <WaitingOverlay/>
-    }
-}
 
 export default function PlayerGame()
 {
@@ -29,15 +20,14 @@ export default function PlayerGame()
     const[totalRounds, setTotalRounds] = useState(0)
     const [initialTimeLimit, setInitialTimeLimit] = useState(3)
     const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit)
-
-    const isSubmitted = false;
+    const[isSubmitted, setIsSubmitted] = useState(false);
     
 
     const onDrawingSubmit = async(drawingInfo) =>
     {
-        //code to send drawing information to db
-        console.log('Drawing submitted');
         console.log(drawingInfo);
+        setIsSubmitted(true);
+        console.log('Drawing submitted');
     }
 
     useEffect(() => {
@@ -85,6 +75,7 @@ export default function PlayerGame()
 
     return (
         <>
+            {}
             <div id="headerContainer">
                 <div className="inputRow">
                     <h1>Player Game Debug</h1>
@@ -95,8 +86,9 @@ export default function PlayerGame()
                 </div>
             </div>
             
-            <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/>
+            {isSubmitted ? <WaitingOverlay/> : <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/>}
             <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button> 
+            
         </>
     );
 }
