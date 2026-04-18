@@ -46,11 +46,12 @@ export default function PlayerLobby()
     console.log(players);
         return(
         <>
+        <div id="container">
             <h1>Player Lobby</h1>
             {inviteCode && <h3>Join Code: {inviteCode}</h3>}
 
             <div className = "menuContainer" >
-
+                <h2>Players in Lobby:</h2>
                 {players.map((player, index) => (
 
                     <div className = "playerCard" key = {player}>
@@ -65,7 +66,7 @@ export default function PlayerLobby()
             <div className = "buttonContainer">
                 <button onClick = {onPlayerLeave}>Leave Game</button>
             </div>
-
+        </div>
 
         </>
 
