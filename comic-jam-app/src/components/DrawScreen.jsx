@@ -161,7 +161,7 @@ export default function DrawScreen({onDrawingSubmit, ref})
                     <div id="size-button-container" class="button-container">
                             {brush_size_list.map((size) =>
                             (
-                                <button className="button-canvas" onClick = {() => setBrushSize(size[1])}>{size[0]}</button>
+                                <button className="button-canvas" onClick = {() => p5Ref.current.setBrushSize(size[1])}>{size[0]}</button>
                             ))}
                         </div>
                     </div>
@@ -173,7 +173,7 @@ export default function DrawScreen({onDrawingSubmit, ref})
                         <div id="color-button-container" class="button-container">
                             {color_list.map((color) =>
                             (
-                                <button className="button-color" style = {{ backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})` }} onClick = {() => setBrushColor(color[0], color[1], color[2])}></button>
+                                <button className="button-color" style = {{ backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})` }} onClick = {() => p5Ref.current.setBrushColor(color[0], color[1], color[2])}></button>
                             ))}
                         </div>
                     </div>
