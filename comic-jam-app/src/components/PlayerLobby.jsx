@@ -7,6 +7,8 @@ export default function PlayerLobby()
     const navigate = useNavigate();
     const [players, setPlayers] = useState([]);
     const [inviteCode, setInviteCode] = useState('');
+    const [timeLimit, setTimeLimit] = useState(0);
+    const [numRounds, setNumRounds] = useState(0);
 
     useEffect(() => {
         const handleLobbyUpdate = (json) => {
@@ -16,6 +18,8 @@ export default function PlayerLobby()
 
         const handleSettingsUpdate = (json) => {
             setInviteCode(json['inviteCode']);
+            setTimeLimit(json['timeLimit']);
+            setNumRounds(json['numRounds']);
         };
 
         // Invoke anonymous "callback" function to acknowledge that the
@@ -49,7 +53,7 @@ export default function PlayerLobby()
         <div id="container">
             <h1>Player Lobby</h1>
             {inviteCode && <h3>Join Code: {inviteCode}</h3>}
-
+            <div className ="inline-flex-parent">
             <div className = "menuContainer" >
                 <h2>Players in Lobby:</h2>
                 {players.map((player, index) => (
@@ -60,7 +64,11 @@ export default function PlayerLobby()
                     </div>
 
                 ))}
-
+                </div>
+                <div className = "menuContainer">
+                    <div>Rounds: {numRounds}</div>
+                    <div>Time Limit: {timeLimit} minutes</div>
+                </div>
             </div>
 
             <div className = "buttonContainer">
