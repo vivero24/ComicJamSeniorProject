@@ -53,14 +53,19 @@ export default function JoinGame({ onDataSend })
         }
     }
 
+    const returnToHomepage = () => {
+        navigate('/')
+    }
+
     return(
         <>
+        <div id="container">
             <h1>Join a Game</h1>
             <div className = "menuContainer">
 
                 <div className = "inputRow">
                     <label htmlFor = "gameCode">Enter Game Code</label>
-                    <input type = "text" id = "gameCode" name = "gameCode" placeholder = "5 digit code"  maxLength= "5" value = {joinCode} onChange = {(e) => setJoinCode(e.target.value)}></input>
+                    <input type="text" id="gameCode" name="gameCode" placeholder="Enter 5 digit code here" maxLength="5" value={joinCode} onChange = {(e) => setJoinCode(e.target.value)}></input>
                 </div>
 
                 <div className = "inputRow">
@@ -68,10 +73,11 @@ export default function JoinGame({ onDataSend })
                     <input type = "text" id = "username" name = "username" placeholder = "Ex: player123" value = {userName} onChange={(e) => setUserName(e.target.value)}></input>
                 </div>
 
-                <button id = "submitButton" name = "submitButton" onClick = {onPlayerJoin}>Submit</button>
+                <button id = "submitButton" name = "submitButton" onClick = {onPlayerJoin}>Join Lobby</button>
+                <button id = "submitButton" name = "submitButton" onClick = {returnToHomepage}>Go back</button>
                 {joinError && <p>{joinError}</p>}
             </div>
-
+        </div>
         </>
     )
 };

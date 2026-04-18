@@ -50,18 +50,20 @@ export default function PlayerLobby()
     console.log(players);
         return(
         <>
+        <div id="container">
             <h1>Player Lobby</h1>
             {inviteCode && <h3>Join Code: {inviteCode}</h3>}
             <div className ="inline-flex-parent">
-                <div className = "menuContainer" >
-                    {players.map((player, index) => (
+            <div className = "menuContainer" >
+                <h2>Players in Lobby:</h2>
+                {players.map((player, index) => (
 
-                        <div className = "playerCard" key = {player}>
-                            <h4>{player}</h4>
-                            <img src = "/defaultpfp.png" id = "defaultPicture" width = "40" height = "40"></img>
-                        </div>
+                    <div className = "playerCard" key = {player}>
+                        <h4>{player}</h4>
+                        <img src = "/defaultpfp.png" id = "defaultPicture" width = "40" height = "40"></img>
+                    </div>
 
-                    ))}
+                ))}
                 </div>
                 <div className = "menuContainer">
                     <div>Rounds: {numRounds}</div>
@@ -72,7 +74,7 @@ export default function PlayerLobby()
             <div className = "buttonContainer">
                 <button onClick = {onPlayerLeave}>Leave Game</button>
             </div>
-
+        </div>
 
         </>
 

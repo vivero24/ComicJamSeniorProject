@@ -54,9 +54,9 @@ def join_lobby():
     # Create new flask session for this player
     session['player_id'] = player.player_id
 
-    # Broadcast lobby-update event,
-    # namespace parameter is required when emitting an event in a REST endpoint
-    # TODO: Place users in rooms so this data isn't sent to users in other lobby 
+    # Immediately sync lobby member list for connected clients
+    # (for example, host on the lobby configuration page).
+    broadcast_lobby_update(game)
 
     return jsonify({'invite_code': requested_invite_code})
 
