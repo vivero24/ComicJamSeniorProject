@@ -37,7 +37,9 @@ class Player(db.Model, MappedAsDataclass):
     # Unused until the sketch phase is implemented.
     # It might also be worth combining these into a tuple
     # or dictionary to reduce the book keeping required.
-    #assigned_panel_id: Mapped[Optional[int]]
+    # assigned_panel_id: Mapped[Optional[int]]
+
+    # Used to send events to specific users
     socket_id: Mapped[str] = mapped_column(default='')
 
 # NOTE: If we're still going ahead with the sketch phase
