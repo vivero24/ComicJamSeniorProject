@@ -34,16 +34,23 @@ def broadcast_game_event(event: Game_Event, game: Game, data=None):
 # currently bound to player count.
 # - May change require changes to account for sketching round
 def assign_comics(game: Game, current_round: int):
-    comics: List[Comic] = []
+    comic_IDs: List[int] = []
     for player in game.players:
         if player.owned_comic is not None:
-            comics.append(player.owned_comic)
+            comic_IDs.append(player.owned_comic.comic_id)
 
     num_players = len(game.players)
+
+    # Commit first to fix bug where assigned_comic_id would
+    # become None after the later commit. It might have to do
+    # with syncing the DB sessions between threads?
+    # Might be hiding a race condition, further testing needed.
+    db.session.commit()
+
     for index, player in enumerate(game.players):
         comic_index = (index - (current_round - 1)) % num_players
 
-        player.assigned_comic_id = comics[comic_index].comic_id
+        player.assigned_comic_id = comic_IDs[comic_index]
 
         current_app.logger.debug(f"Player={player.username}, id={player.player_id} assigned comic_id={player.assigned_comic_id}")
 

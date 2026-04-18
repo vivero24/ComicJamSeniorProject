@@ -170,11 +170,13 @@ def submit_panel():
     if 'player_id' not in session:
         return 'Error: user is not a Player', 403
 
+    #db.session.commit()
+
     player = db.get_or_404(Player, session['player_id'])
 
     if player.assigned_comic_id is None:
+        current_app.logger.warning(f"Player={player.username} attempted submission without an active assignment")
         return "Error: Player does not have a comic assigned.", 400
-
 
     comic = db.get_or_404(Comic, player.assigned_comic_id)
     image_data = request.get_data()
@@ -183,13 +185,10 @@ def submit_panel():
                   comic=comic,
                   image=image_data)
 
-    comic.completed_panels.append(panel)
-
     db.session.add(panel)
 
     # Clear assignment to indicate player submitted
     player.assigned_comic_id = None
-
     db.session.commit()
 
     current_app.logger.debug(f"Player={player.username} submitted panel for Comic={comic.comic_name}")

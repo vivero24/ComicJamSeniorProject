@@ -15,6 +15,7 @@ export default function CreateLobby({ onDataSend })
     const navigate = useNavigate();
 
     const[inviteCode, setInviteCode] = useState("")
+    const[players, setPlayers] = useState([]);
     const[numOfRounds, setNumOfRounds] = useState(4);
     const[timeLimit, setTimeLimit] = useState(5);
 
@@ -38,8 +39,7 @@ export default function CreateLobby({ onDataSend })
         }
     }, []);
 
-    // Run updateSettings() whenever timeLimit or numOfRounds are
-    // updated
+    // Run updateSettings() whenever timeLimit or numOfRounds are updated
     useEffect(() => {
         const updateSettings = async () => {
 
