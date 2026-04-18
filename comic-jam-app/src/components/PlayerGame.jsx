@@ -3,6 +3,8 @@ import {useState, useEffect, useRef} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { socket } from '../socket.js'
 
+
+//Need to figure out how to not show overlay when the timer goes off. Only do it when the button is clicked.
 function WaitingOverlay()
 {
     return<>
@@ -53,7 +55,7 @@ export default function PlayerGame()
             callback()
         }
 
-        if (timeRemaining <= 0)
+        if (timeRemaining <= 0 && isSubmitted === false)
         {
             drawScreenRef.current.submitDrawing();
             return;
@@ -86,7 +88,7 @@ export default function PlayerGame()
                 </div>
             </div>
             
-            {isSubmitted ? <WaitingOverlay/> : 
+            {isSubmitted && timeRemaining > 0 ? <WaitingOverlay/> : 
             <> <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/> 
                <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button> 
             </>}
