@@ -45,27 +45,27 @@ function App() //main root component, ties all other components in here
     }
 
     function onDisconnect()
-        {
-                setIsConnected(false);
-            }
+    {
+      setIsConnected(false);
+    }
 
-            function updateConnectionCount(userCount)
-        {
-                setConnectionCount(userCount);
-                console.log(userCount);
-            }
+    function updateConnectionCount(userCount)
+    {
+      setConnectionCount(userCount);
+      console.log(userCount);
+    }
 
-            socket.on('connect', onConnect);
-            socket.on('disconnect', onDisconnect);
-            socket.on('user-count-update', updateConnectionCount);
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    socket.on('user-count-update', updateConnectionCount);
 
 
-            return () =>{
-                socket.off('connect', onConnect);
-                socket.off('disconnect', onDisconnect);
+    return () =>{
+        socket.off('connect', onConnect);
+        socket.off('disconnect', onDisconnect);
 
-            }
-        } ,[]);
+    }
+  } ,[]);
 
     return(
         <BrowserRouter>

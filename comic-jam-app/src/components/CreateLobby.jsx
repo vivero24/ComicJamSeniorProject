@@ -44,28 +44,46 @@ export default function CreateLobby({ onDataSend })
 
     const onStartGame = async () => {
         socket.emit('host-started-game')
-
-        navigate('/HostGame')
+        if (numOfRounds == 0 || numOfPlayers == 0 || timeLimit == 0)
+        {
+            window.alert("No values for the lobby can be 0");
+        }
+        else if (numOfPlayers == 1)
+        {
+            window.alert("Number of players cannot be 1");
+        }
+        else
+        {
+            navigate('/HostGame')
+        }
     }
+
+    const closeLobby = () => {
+        //socket.emit('host-closed-lobby');
+        socket.disconnect();
+        navigate('/');
+    }
+
+    const restrictNumVal = (value, min, max) => {
+        if (value < min) value = min;
+        if (value > max) value = max;
+        return value;
+    };
 
     return (
         <>
+        <div id="container">
             <h1>Lobby Configuration</h1>
-            {inviteCode && <h3>Join Code: {inviteCode}</h3>}
+            {inviteCode && <h3>Lobby code: {inviteCode}</h3>}
             <div className="inline-flex-parent">
                 <div className = "menuContainer">
                     <div className = "inputRow">
-                        <label htmlFor = "numOfRounds" > Number of Rounds</label>
-                        <input type = "number" id = "numOfRounds" name = "numOfRounds" min = "1" max = "4" value = {numOfRounds} onChange={(e) => setNumOfRounds(e.target.value)}></input> <br></br>
+                        <label htmlFor = "numOfRounds" >Set the number of rounds (3-8 rounds)</label>
+                        <input type="number" id="numOfRounds" name="numOfRounds" min="3" max="8" value={numOfRounds} onChange={(e) => setNumOfRounds(restrictNumVal(e.target.value, e.target.min, e.target.max))}></input> <br></br>
                     </div>
 
                     <div className = "inputRow">
-                        <label htmlFor = "numOfPlayers"> Number of Players</label>
-                        <input type = "number" id = "numOfPlayers" name = "numOfPlayers" min = "1" max = "4" value = {numOfPlayers} onChange = {(e) => setNumOfPlayers(e.target.value)} ></input> <br></br>
-                    </div>
-
-                    <div className = "inputRow">
-                        <label htmlFor = "timeLimit"> Round Time Limit</label>
+                        <label htmlFor = "timeLimit">Set the amount of time per round</label>
                         <input type = "number" id = "timeLimit" name = "timeLimit" min = "1" max = "10" value = {timeLimit} onChange = {(e) => setTimeLimit(e.target.value)}></input> <br></br>
                     </div>
                 </div>
@@ -82,7 +100,9 @@ export default function CreateLobby({ onDataSend })
             </div>
             <div>
                 <button id = "submitButton" name = "submitButton" onClick = {onStartGame}>Start Game</button>
+                <button id = "submitButton" name = "submitButton" onClick = {closeLobby}>Close Lobby</button>
             </div>
+        </div>
         </>
     );
 }

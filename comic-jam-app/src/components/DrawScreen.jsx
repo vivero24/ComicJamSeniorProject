@@ -1,42 +1,23 @@
-import React, { useRef, useEffect } from 'react'; 
+import React, { useRef, useEffect, useImperativeHandle } from 'react'; 
 import p5 from 'p5';
 
-export default function DrawScreen()
+export default function DrawScreen({onDrawingSubmit, ref})
 {
+    const submitDrawing = () =>{
+        const imageData = p5Ref.current.getImageData();
+        onDrawingSubmit(imageData)
+    }  
+     
 
-    function setBrushSize(new_size){
-        brush.size = new_size;
-    }
-
-    function setBrushColor(r,g, b){
-        brush.color = [r, g, b];
-    }
-
-    function changeBrushState(new_state){
-        brush.state = new_state;
-    }
-
-    /*
-    function clearCanvas(){
-        background(background_details.color);
-        brush.state = BrushState.BRUSH;
-        //giveSelectedButtonOutline(document.getElementById("tool-button-container").children[0], "tool-button");
-    }   
-    */     
+    useImperativeHandle(ref, () =>({
+        submitDrawing: submitDrawing
+        }
+    ));
 
     const BrushState = Object.freeze({
         BRUSH: "brush",
-        SQUARE: "square",
-        CIRCLE: "circle",
-        TRIANGLE: "triangle",
         ERASE: "erase"
     });
-
-    let brush = {
-        size : 4,
-        color : [0, 0, 0],
-        state : BrushState.BRUSH
-    }
 
     let background_details = {
         color : [255, 255, 255],
@@ -44,11 +25,8 @@ export default function DrawScreen()
     }
 
     let brush_tools_list = [
-        ["Paint Brush", () => changeBrushState(BrushState.BRUSH)],
-        ["Square", () => changeBrushState(BrushState.SQUARE)],
-        ["Circle", () => changeBrushState(BrushState.CIRCLE)],
-        ["Triangle", () => changeBrushState(BrushState.TRIANGLE)],
-        ["Eraser", () => changeBrushState(BrushState.ERASE)],
+        ["Paint Brush", () => p5Ref.current.changeBrushState(BrushState.BRUSH)],
+        ["Eraser", () => p5Ref.current.changeBrushState(BrushState.ERASE)],
         ["Clear Canvas", () => p5Ref.current.clearCanvas()],
         ["Save Image", () => roundEnd()]
     ]
@@ -62,27 +40,42 @@ export default function DrawScreen()
     ]
 
     let color_list = [
+        [215, 13, 34],
+        [255, 54, 58],
+        [254, 108, 22],
+        [204, 109, 2],
+        [247, 180, 75],
+        [255, 196, 28],
+        [255, 222, 0],
+        [200, 223, 78],
+        [127, 224, 76],
+        [100, 255, 69],
+        [77, 192, 161],
+        [88, 207, 229],
+        [114, 145, 228],
+        [137, 117, 230],
+        [112, 76, 236],
+        [117, 114, 227],
+        [150, 74, 206],
+        [210, 111, 225],
+        [221, 72, 215],
+        [255, 60, 246],
         [255, 255, 255],
         [120, 120, 120],
         [0, 0, 0],
-        [255, 0, 0],
-        [0, 255, 0],
-        [0, 0, 255],
-        [255, 255, 0],
-        [255, 0, 255],
-        [0, 255, 255],
-        [255, 122, 122]
     ]
-
 
     const sketch = (p) =>
     {
+        let brush = {
+            size : 4,
+            color : [0, 0, 0],
+            state : BrushState.BRUSH
+        }
+
         p.setup = () =>
         {
-            //need to find a way to add createToolButtons, createBrushSizeButtons, and generateColorButtons functions
-            //may not need to.
             p.createCanvas(background_details.size[0], background_details.size[1]);
-            //c.parent("canvas");
             //background function call here, not sure what it does yet or where it is
             p.background(background_details.color);
 
@@ -99,21 +92,6 @@ export default function DrawScreen()
                     p.stroke(brush.color);
                     p.line(p.pmouseX, p.pmouseY, p.mouseX, p.mouseY);
                     break;
-                case BrushState.SQUARE:
-                    p.stroke(brush.color);
-                    p.fill(brush.color);
-                    p.square((p.mouseX - (brush.size / 2)), (p.mouseY - (brush.size / 2)), brush.size);
-                    break;
-                case BrushState.CIRCLE:
-                    p.stroke(brush.color);
-                    p.fill(brush.color);
-                    p.circle(p.mouseX, p.mouseY, brush.size);
-                    break;
-                case BrushState.TRIANGLE:
-                    p.stroke(brush.color);
-                    p.fill(brush.color);
-                    p.triangle(p.mouseX, (p.mouseY - brush.size), (p.mouseX - brush.size), (p.mouseY + brush.size), (p.mouseX + brush.size), (p.mouseY + brush.size)); 
-                    break;
                 case BrushState.ERASE:
                     p.stroke(background_details.color)
                     p.line(p.pmouseX, p.pmouseY, p.mouseX, p.mouseY);
@@ -122,11 +100,32 @@ export default function DrawScreen()
             }
         }
 
+        p.setBrushSize = (size) =>
+        {
+            brush.size = size;
+        }
+        
+        p.setBrushColor = (r, g, b) =>
+        {
+            brush.color = [r, g, b];
+        }
+        
+        p.changeBrushState = (state) =>
+        {
+            brush.state = state;
+        }
+
         p.clearCanvas = () =>
         {
             p.background(background_details.color);
             brush.state = BrushState.BRUSH;
         }
+
+        p.getImageData = () =>
+        {
+            return p.canvas.toDataURL();
+        }
+
     }
 
     const canvasRef = useRef();
@@ -141,43 +140,46 @@ export default function DrawScreen()
 
     return(
         <>
-        <h1>Canvas</h1>
-        <div ref = {canvasRef}></div>
-            <div id = "brushTools">
 
-                <label>Brush Options</label>
-                <div className = "toolSection">
-                    {brush_tools_list.map((tool) =>
-                    (
-                        <button className = "tool-button" onClick = {tool[1]}>{tool[0]}</button>
-                    ))};
+        <div id="canvas-container">
+            <div id="brush-tools">
+
+                <div className = "tool-section">
+                    <label className="title-text">Brush Options</label>
+                    <div id="tool-button-container" class="button-container">
+                        {brush_tools_list.map((tool) =>
+                        (
+                            <button className="button-canvas" onClick = {tool[1]}>{tool[0]}</button>
+                        ))}
+                    </div>
                 </div>
 
-                <div className = "seperator"></div>
+                <div className = "separator"></div>
 
-                <label>Brush size</label>
-                <div className = "toolSection">
-                    {brush_size_list.map((size) =>
-                    (
-                        <button className = "size-button" onClick = {() => setBrushSize(size[1])}>{size[0]}</button>
-                    ))};
+                <div className = "tool-section">
+                    <label className="title-text">Brush Size</label>
+                    <div id="size-button-container" class="button-container">
+                            {brush_size_list.map((size) =>
+                            (
+                                <button className="button-canvas" onClick = {() => setBrushSize(size[1])}>{size[0]}</button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className = "separator"></div>
+
+                    <div className = "tool-section">
+                        <label className="title-text">Brush Colors</label>
+                        <div id="color-button-container" class="button-container">
+                            {color_list.map((color) =>
+                            (
+                                <button className="button-color" style = {{ backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})` }} onClick = {() => setBrushColor(color[0], color[1], color[2])}></button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
-
-                <div className = "seperator"></div>
-                <label>Brush color</label>
-                <div className = "toolSection">
-                    {color_list.map((color) =>
-                    (
-                        <button className = "color-button" style = {{ backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})` }} onClick = {() => setBrushColor(color[0], color[1], color[2])}>
-                            
-                        </button>
-                    ))};
-
-                </div>
-
+                <div ref = {canvasRef} id="canvas"></div>
             </div>
-
-        
         </>
     )
 }
