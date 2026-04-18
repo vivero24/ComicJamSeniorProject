@@ -4,6 +4,22 @@ import {useState, useEffect, useRef} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { socket } from '../socket.js'
 
+function WaitingOverlay()
+{
+    return
+    <>
+        <h4>Waiting for other players..</h4>
+    </>
+}
+
+function Submitted(isSubmitted)
+{
+    
+    if (isSubmitted)
+    {
+        return <WaitingOverlay/>
+    }
+}
 
 export default function PlayerGame()
 {
@@ -14,6 +30,9 @@ export default function PlayerGame()
     const[totalRounds, setTotalRounds] = useState(0)
     const [initialTimeLimit, setInitialTimeLimit] = useState(3)
     const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit)
+
+    const isSubmitted = false;
+    
 
     const onDrawingSubmit = async(drawingInfo) =>
     {
@@ -45,7 +64,7 @@ export default function PlayerGame()
             callback()
         }
 
-                if (timeRemaining <= 0)
+        if (timeRemaining <= 0)
         {
             drawScreenRef.current.submitDrawing();
             return;
