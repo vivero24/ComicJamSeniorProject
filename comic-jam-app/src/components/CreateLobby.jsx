@@ -17,7 +17,6 @@ export default function CreateLobby({ onDataSend })
     const[inviteCode, setInviteCode] = useState("")
     const[players, setPlayers] = useState([]);
     const[numOfRounds, setNumOfRounds] = useState(0);
-    const[numOfPlayers, setNumOfPlayers] = useState(0);
     const[timeLimit, setTimeLimit] = useState(0);
 
     useEffect(() => {
@@ -40,20 +39,37 @@ export default function CreateLobby({ onDataSend })
         }
     }, []);
 
-    // TODO: POST to update lobby settings whenever they are modified
+    // Run updateSettings() whenever timeLimit or numOfRounds are
+    // updated
+    useEffect(() => {
+        const updateSettings = async () => {
+
+            // NOTE: only sending timeLimit for now, waiting until
+            // settings are ironed out
+            const lobbySettings = {
+                timeLimit: timeLimit,
+                numRounds: numOfRounds
+            }
+
+            await fetch('/api/change-lobby-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(lobbySettings),
+                credentials: 'include'})
+        };
+
+        updateSettings();
+    }, [timeLimit, numOfRounds]);
 
     const onStartGame = async () => {
-        socket.emit('host-started-game')
-        if (numOfRounds == 0 || numOfPlayers == 0 || timeLimit == 0)
+
+        if (numOfRounds == 0 || timeLimit == 0)
         {
             window.alert("No values for the lobby can be 0");
         }
-        else if (numOfPlayers == 1)
-        {
-            window.alert("Number of players cannot be 1");
-        }
         else
         {
+            socket.emit('host-started-game')
             navigate('/HostGame')
         }
     }
@@ -72,37 +88,56 @@ export default function CreateLobby({ onDataSend })
 
     return (
         <>
-        <div id="container">
-            <h1>Lobby Configuration</h1>
-            {inviteCode && <h3>Lobby code: {inviteCode}</h3>}
-            <div className="inline-flex-parent">
-                <div className = "menuContainer">
-                    <div className = "inputRow">
-                        <label htmlFor = "numOfRounds" >Set the number of rounds (3-8 rounds)</label>
-                        <input type="number" id="numOfRounds" name="numOfRounds" min="3" max="8" value={numOfRounds} onChange={(e) => setNumOfRounds(restrictNumVal(e.target.value, e.target.min, e.target.max))}></input> <br></br>
+            <div id="container">
+                <h1>Lobby Configuration</h1>
+                {inviteCode && <h3>Lobby code: {inviteCode}</h3>}
+                <div className="inline-flex-parent">
+
+                    <div className = "menuContainer">
+                        <div className = "inputRow">
+                            <label htmlFor = "numOfRounds" >Number of Rounds</label>
+                            <input type = "number"
+                                id = "numOfRounds"
+                                name = "numOfRounds"
+                                min = "1"
+                                max = "4"
+                                value = {numOfRounds}
+                                onChange={e => { setNumOfRounds(e.target.value)}}>
+                            </input> <br></br>
+                        </div>
+
+                        <div className = "inputRow">
+                            <label htmlFor = "timeLimit">Round Time Limit</label>
+                            <input type = "number"
+                                id = "timeLimit"
+                                name = "timeLimit"
+                                min = "1"
+                                max = "10"
+                                value = {timeLimit}
+                                onChange={e => { setTimeLimit(e.target.value)}}>
+                            </input> <br></br>
+                        </div>
                     </div>
 
-                    <div className = "inputRow">
-                        <label htmlFor = "timeLimit">Set the amount of time per round</label>
-                        <input type = "number" id = "timeLimit" name = "timeLimit" min = "1" max = "10" value = {timeLimit} onChange = {(e) => setTimeLimit(e.target.value)}></input> <br></br>
+                    <div className = "menuContainer">
+                        <h4>Players Joined</h4>
+                        {players.length === 0 && <p>No players joined yet.</p>}
+                        {players.map((player) => (
+                            <div className = "playerCard" key = {player}>
+                                <h4>{player}</h4>
+                                <img src = "/defaultpfp.png" id = "defaultPicture" width = "40" height = "40"></img>
+                            </div>
+                        ))}
                     </div>
+
                 </div>
-                <div className = "menuContainer">
-                    <h4>Players Joined</h4>
-                    {players.length === 0 && <p>No players joined yet.</p>}
-                    {players.map((player) => (
-                        <div className = "playerCard" key = {player}>
-                            <h4>{player}</h4>
-                            <img src = "/defaultpfp.png" id = "defaultPicture" width = "40" height = "40"></img>
-                        </div>
-                    ))}
+
+                <div>
+                    <button id = "submitButton" name = "submitButton" onClick = {onStartGame}>Start Game</button>
+                    <button id = "submitButton" name = "submitButton" onClick = {closeLobby}>Close Lobby</button>
                 </div>
+
             </div>
-            <div>
-                <button id = "submitButton" name = "submitButton" onClick = {onStartGame}>Start Game</button>
-                <button id = "submitButton" name = "submitButton" onClick = {closeLobby}>Close Lobby</button>
-            </div>
-        </div>
         </>
     );
 }

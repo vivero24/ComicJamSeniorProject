@@ -62,12 +62,14 @@ def connect_handler():
 
     join_room(game.invite_code)
     broadcast_lobby_update(game)
-
+    broadcast_settings_update(game)
+    '''
     settings = {
         'inviteCode': game.invite_code
         # TODO: to be expanded later
     }
     emit('settings-update', settings, broadcast=True, to=game.invite_code)
+        '''
 
 @socketio.on('disconnect')
 def disconnect_handler():
@@ -77,8 +79,8 @@ def disconnect_handler():
 
 # Emitter for 'lobby-update' event
 #
-# Broadcasts the usernames of all players in the
-# given lobby to the SocketIO room (keyed by invite code)
+# Broadcasts the usernames of all players in a lobby.
+# Event is send to the SocketIO room keyed by the given game's invide code
 #
 # Sends a JSON array of strings
 def broadcast_lobby_update(game: Game):
@@ -87,3 +89,23 @@ def broadcast_lobby_update(game: Game):
         usernames.append(p.username)
 
     emit('lobby-update', usernames, broadcast=True, namespace='/', to=game.invite_code)
+
+# Emitter for 'settings-update' event
+#
+# Broadcasts the game's settings to all players in a lobby.
+# Event is send to the SocketIO room keyed by the given game's invide code
+#
+# Sends a JSON of the form:
+#   {
+#       'inviteCode': String,
+#       'timeLimit': Integer,
+#       'numRounds': Integer
+#   }
+def broadcast_settings_update(game: Game):
+    settings = {
+        'inviteCode': game.invite_code,
+        'timeLimit': game.time_limit_minutes,
+        'numRounds': game.rount_count,
+    }
+
+    emit('settings-update', settings, broadcast=True, namespace='/', to=game.invite_code)
