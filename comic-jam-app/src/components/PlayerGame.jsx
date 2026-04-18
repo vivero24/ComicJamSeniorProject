@@ -6,7 +6,7 @@ import { socket } from '../socket.js'
 function WaitingOverlay()
 {
     return<>
-        <h4>Waiting for other players..</h4>
+        <h1>Waiting for other players...</h1>
     </>
 }
 
@@ -18,7 +18,7 @@ export default function PlayerGame()
     
     const[currRound, setCurrRound] = useState(0)
     const[totalRounds, setTotalRounds] = useState(0)
-    const [initialTimeLimit, setInitialTimeLimit] = useState(3)
+    const [initialTimeLimit, setInitialTimeLimit] = useState(10)
     const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit)
     const[isSubmitted, setIsSubmitted] = useState(false);
     
@@ -86,8 +86,11 @@ export default function PlayerGame()
                 </div>
             </div>
             
-            {isSubmitted ? <WaitingOverlay/> : <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/>}
-            <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button> 
+            {isSubmitted ? <WaitingOverlay/> : 
+            <> <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/> 
+               <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button> 
+            </>}
+            
             
         </>
     );
