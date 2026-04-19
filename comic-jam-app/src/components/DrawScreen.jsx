@@ -3,11 +3,13 @@ import p5 from 'p5';
 
 export default function DrawScreen({onDrawingSubmit, ref})
 {
-    const submitDrawing = () =>{
+    const submitDrawing = async () =>{
         const imageData = p5Ref.current.getImageData();
-        onDrawingSubmit(imageData)
-    }  
-     
+
+        console.log('Drawing submitted');
+        await onDrawingSubmit(imageData)
+    } 
+
 
     useImperativeHandle(ref, () =>({
         submitDrawing: submitDrawing

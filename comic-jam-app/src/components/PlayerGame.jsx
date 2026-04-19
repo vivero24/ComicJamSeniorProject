@@ -6,50 +6,58 @@ import { socket } from '../socket.js'
 export default function PlayerGame()
 {
     const drawScreenRef = useRef();
-    const navigate = useNavigate()
-    
-    const[currRound, setCurrRound] = useState(0)
-    const[totalRounds, setTotalRounds] = useState(0)
-    const [initialTimeLimit, setInitialTimeLimit] = useState(3)
-    const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit)
+    const navigate = useNavigate();
 
-    const onDrawingSubmit = async(drawingInfo) =>
-    {
-        //code to send drawing information to db
+    const[currRound, setCurrRound] = useState(0);
+    const[totalRounds, setTotalRounds] = useState(0);
+    const [initialTimeLimit, setInitialTimeLimit] = useState(15);
+    const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit);
+
+    const onDrawingSubmit = async (drawingInfo) => {
         console.log('Drawing submitted');
-        console.log(drawingInfo);
+
+        // Send dataURL of image to server
+        await fetch('api/submit-panel', {
+            method: 'POST',
+            body: drawingInfo,
+            credentials: 'include'
+        });
     }
 
     useEffect(() => {
-        // TODO:
-        // - Display countdown using time limit retrieved
-        // from the websocket event
         const handleRoundStart = (json, callback) => {
-            console.log(json)
+            console.log(json);
 
-            setCurrRound(json['currentRound'])
-            setTotalRounds(json['totalRounds'])
-            setTimeRemaining(json['timeLimit'])
+            setCurrRound(json['currentRound']);
+            setTotalRounds(json['totalRounds']);
+            setTimeRemaining(json['timeLimit']);
 
-            callback()
+            callback();
         }
 
-        const handleGameEnd = (callback) => {
-            callback()
+        const handleGameEnd = async (callback) => {
+            await drawScreenRef.current.submitDrawing();
+            await callback();
             navigate('/Downloads');
         }
 
-        const handleRoundEnd = (callback) => {
-            callback()
+        const handleRoundEnd = async (callback) => {
+            await drawScreenRef.current.submitDrawing();
+            await callback();
         }
 
-        if (timeRemaining <= 0)
-        {
-            drawScreenRef.current.submitDrawing();
-            return;
-        }
+        const interval = setInterval(() => {
+            setTimeRemaining(prev => {
+                if (prev <= 0) {
+                    return 0;
+                } else {
+                    return prev-1;
+                }
+            });
 
-        const interval = setInterval(() =>{ setTimeRemaining(prev => prev -1); }, 1000)
+            // Prevent timer from going negative
+            // if server is slow to respond
+        }, 1000);
 
         socket.on('round-start', handleRoundStart);
         socket.on('round-end', handleRoundEnd);
@@ -61,7 +69,7 @@ export default function PlayerGame()
             socket.off('game-end', handleGameEnd);
             clearInterval(interval);
         }
-    }, [timeRemaining])
+    }, [])
 
     return (
         <>
@@ -74,7 +82,7 @@ export default function PlayerGame()
                     <div>Players Submitted:</div>
                 </div>
             </div>
-            
+
             <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/>
             <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button> 
         </>
