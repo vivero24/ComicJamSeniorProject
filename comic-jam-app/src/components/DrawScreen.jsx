@@ -6,9 +6,8 @@ export default function DrawScreen({onDrawingSubmit, ref})
     const submitDrawing = async () =>{
         const imageData = p5Ref.current.getImageData();
 
-        console.log('Drawing submitted');
         await onDrawingSubmit(imageData)
-    } 
+    }
 
 
     useImperativeHandle(ref, () =>({

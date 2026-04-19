@@ -79,13 +79,6 @@ export default function PlayerGame()
                     return prev-1;
                 }
             });
-            /*
-            if (timeRemaining <= 0 && isSubmitted === false)
-            {
-                drawScreenRef.current.submitDrawing();
-                return;
-            }
-            */
         }, 1000);
 
         socket.on('round-start', handleRoundStart);
