@@ -1,5 +1,5 @@
 import DrawScreen from './DrawScreen';
-import {useState, useEffect, useRef} from 'react';
+import {useState, useEffect, useRef, useImperativeHandle} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { socket } from '../socket.js'
 
@@ -12,13 +12,34 @@ function WaitingOverlay()
     </>
 }
 
+function PlanningPhase({ref})
+{
+    const [prompt, setPrompt] = useState("");
+    const onPromptSubmit = () =>
+    {
+        //send prompt to the backend
+        console.log(prompt);
+
+    }
+
+    useImperativeHandle(ref,() => ({
+        onPromptSubmit: onPromptSubmit
+    }))
+
+    return<>
+        <h1>Enter a prompt for your panel</h1>
+        <input type = "text" value = {prompt} onChange = {(e) => setPrompt(e.target.value)}></input>
+        <button onClick = {onPromptSubmit}>Submit prompt</button>
+    </>
+}
 
 export default function PlayerGame()
 {
     const drawScreenRef = useRef();
+    const planningRef = useRef();
     const navigate = useNavigate();
 
-    const[currRound, setCurrRound] = useState(0);
+    const[currRound, setCurrRound] = useState(1);
     const[totalRounds, setTotalRounds] = useState(0);
     const [initialTimeLimit, setInitialTimeLimit] = useState(15);
     const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit);
@@ -55,6 +76,8 @@ export default function PlayerGame()
         }
 
         const handleGameEnd = async (callback) => {
+
+
             if (isSubmitted != true) {
                 await drawScreenRef.current.submitDrawing();
             }
@@ -64,7 +87,12 @@ export default function PlayerGame()
         }
 
         const handleRoundEnd = async (callback) => {
-            if (isSubmitted != true) {
+            if(currRound === 1)
+            {
+                planningRef.current.onPromptSubmit();
+            }
+
+            else if (isSubmitted != true) {
                 await drawScreenRef.current.submitDrawing();
             }
 
@@ -113,7 +141,7 @@ export default function PlayerGame()
                 </div>
             </div>
 
-            {isSubmitted && timeRemaining > 0 ? <WaitingOverlay/> :
+            {currRound === 1 ? <PlanningPhase ref = {planningRef}/> : isSubmitted && timeRemaining > 0 ? <WaitingOverlay/> :
                 <> <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/>
                     <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button> 
                 </>}
