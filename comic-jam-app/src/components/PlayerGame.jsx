@@ -16,64 +16,90 @@ function WaitingOverlay()
 export default function PlayerGame()
 {
     const drawScreenRef = useRef();
-    const navigate = useNavigate()
-    
-    const[currRound, setCurrRound] = useState(0)
-    const[totalRounds, setTotalRounds] = useState(0)
-    const [initialTimeLimit, setInitialTimeLimit] = useState(10)
-    const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit)
-    const[isSubmitted, setIsSubmitted] = useState(false);
-    
+    const navigate = useNavigate();
 
-    const onDrawingSubmit = async(drawingInfo) =>
-    {
-        console.log(drawingInfo);
-        setIsSubmitted(true);
+    const[currRound, setCurrRound] = useState(0);
+    const[totalRounds, setTotalRounds] = useState(0);
+    const [initialTimeLimit, setInitialTimeLimit] = useState(15);
+    const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit);
+    const[isSubmitted, setIsSubmitted] = useState(false);
+
+    const[numPlayersRemaining, setNumPlayersRemaining] = useState(0)
+
+    const onDrawingSubmit = async (drawingInfo) => {
         console.log('Drawing submitted');
+
+        if (isSubmitted == false) {
+
+            setIsSubmitted(true);
+
+            // Send dataURL of image to server
+            await fetch('api/submit-panel', {
+                method: 'POST',
+                body: drawingInfo,
+                credentials: 'include'
+            });
+        }
     }
 
     useEffect(() => {
-        // TODO:
-        // - Display countdown using time limit retrieved
-        // from the websocket event
         const handleRoundStart = (json, callback) => {
-            console.log(json)
+            console.log(json);
 
-            setCurrRound(json['currentRound'])
-            setTotalRounds(json['totalRounds'])
-            setTimeRemaining(json['timeLimit'])
+            setCurrRound(json['currentRound']);
+            setTotalRounds(json['totalRounds']);
+            setTimeRemaining(json['timeLimit']);
+            setIsSubmitted(false)
 
-            callback()
+            callback();
         }
 
-        const handleGameEnd = (callback) => {
-            callback()
+        const handleGameEnd = async (callback) => {
+            if (isSubmitted != true) {
+                await drawScreenRef.current.submitDrawing();
+            }
+
+            callback();
             navigate('/Downloads');
         }
 
-        const handleRoundEnd = (callback) => {
-            callback()
+        const handleRoundEnd = async (callback) => {
+            if (isSubmitted != true) {
+                await drawScreenRef.current.submitDrawing();
+            }
+
+            callback();
         }
 
-        if (timeRemaining <= 0 && isSubmitted === false)
-        {
-            drawScreenRef.current.submitDrawing();
-            return;
+        const handleSubmissionUpdate = (json) => {
+            setNumPlayersRemaining(json['playersRemaining'])
         }
 
-        const interval = setInterval(() =>{ setTimeRemaining(prev => prev -1); }, 1000)
+        const interval = setInterval(() => {
+            // Prevent timer from going negative
+            // if server is slow to respond
+            setTimeRemaining(prev => {
+                if (prev <= 0) {
+                    return 0;
+                } else {
+                    return prev-1;
+                }
+            });
+        }, 1000);
 
         socket.on('round-start', handleRoundStart);
         socket.on('round-end', handleRoundEnd);
         socket.on('game-end', handleGameEnd);
+        socket.on('player-submission-update', handleSubmissionUpdate);
 
         return () => {
             socket.off('round-start', handleRoundStart);
-            socket.on('round-end', handleRoundEnd);
+            socket.off('round-end', handleRoundEnd);
             socket.off('game-end', handleGameEnd);
+            socket.off('player-submission-update', handleSubmissionUpdate);
             clearInterval(interval);
         }
-    }, [timeRemaining])
+    }, [isSubmitted])
 
     return (
         <>
@@ -83,17 +109,15 @@ export default function PlayerGame()
                     <h1>Player Game Debug</h1>
                     <div>Round {currRound} of {totalRounds}</div>
                     <div>Time Remaining: {timeRemaining}</div>
-                    <div>Players Still drawing:</div>
-                    <div>Players Submitted:</div>
+                    <div>Players Still Working:{numPlayersRemaining}</div>
                 </div>
             </div>
-            
-            {isSubmitted && timeRemaining > 0 ? <WaitingOverlay/> : 
-            <> <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/> 
-               <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button> 
-            </>}
-            
-            
+
+            {isSubmitted && timeRemaining > 0 ? <WaitingOverlay/> :
+                <> <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/>
+                    <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button> 
+                </>}
+
         </>
     );
 }

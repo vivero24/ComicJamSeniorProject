@@ -1,6 +1,4 @@
-import time
-
-from flask import logging, session, request, abort, current_app
+from flask import session, request, abort, current_app
 from flask_socketio import emit, join_room
 from .models import db, Player, Game
 from . import socketio
@@ -50,26 +48,20 @@ def connect_handler():
 
         game = player.game
 
-        current_app.logger.info(f"Player={player.username} joined Game={game.invite_code} with SID={player.socket_id}")
+        current_app.logger.debug(f"Player={player.username} joined Game={game.invite_code} with SID={player.socket_id}")
 
     elif 'host_id' in session:
         game = db.get_or_404(Game, session['host_id'])
 
-        current_app.logger.info(f"Host connected to Game={game.invite_code} with SID={request.sid}") # # pyright: ignore[reportAttributeAccessIssue]
+        current_app.logger.debug(f"Host connected to Game={game.invite_code} with SID={request.sid}") # # pyright: ignore[reportAttributeAccessIssue]
     else:
-        current_app.logger.warning("User has no ID in session, refusing connection")
+        current_app.logger.warning("User has neither player nor host ID in session, refusing connection")
         return ConnectionRefusedError
 
     join_room(game.invite_code)
+
     broadcast_lobby_update(game)
     broadcast_settings_update(game)
-    '''
-    settings = {
-        'inviteCode': game.invite_code
-        # TODO: to be expanded later
-    }
-    emit('settings-update', settings, broadcast=True, to=game.invite_code)
-        '''
 
 @socketio.on('disconnect')
 def disconnect_handler():
@@ -80,7 +72,7 @@ def disconnect_handler():
 # Emitter for 'lobby-update' event
 #
 # Broadcasts the usernames of all players in a lobby.
-# Event is send to the SocketIO room keyed by the given game's invide code
+# Event is sent to the SocketIO room keyed by the given game's invide code
 #
 # Sends a JSON array of strings
 def broadcast_lobby_update(game: Game):
@@ -93,7 +85,7 @@ def broadcast_lobby_update(game: Game):
 # Emitter for 'settings-update' event
 #
 # Broadcasts the game's settings to all players in a lobby.
-# Event is send to the SocketIO room keyed by the given game's invide code
+# Event is sent to the SocketIO room keyed by the given game's invide code
 #
 # Sends a JSON of the form:
 #   {
@@ -109,3 +101,21 @@ def broadcast_settings_update(game: Game):
     }
 
     emit('settings-update', settings, broadcast=True, namespace='/', to=game.invite_code)
+
+# Emitter for 'player-submission-update' event
+#
+# Broadcasts the number of players that have not yet submitted their
+# prompt or panel, depending on the phase of the game.
+# Event is sent to the SocketIO room keyed by the given game's invide code
+#
+# Sends a JSON of the form:
+#   {
+#       'playersRemaining': Integer
+#   }
+def broadcast_player_submission_update(game: Game):
+    emit('player-submission-update',
+         {"playersRemaining": game.num_players_unsubmitted},
+         to=game.invite_code,
+         namespace='/')
+
+
