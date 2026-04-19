@@ -4,6 +4,8 @@ import time
 from flask import Flask, current_app
 from socketio.exceptions import TimeoutError
 
+from app.events import broadcast_player_submission_update
+
 from . import socketio
 from .models import db, Game, Comic
 
@@ -94,6 +96,11 @@ def manage_game_loop(game_id: int, app: Flask):
         # Rotate assignment based on round
         assign_comics(game, current_round)
 
+        game.num_players_unsubmitted = len(game.players)
+        broadcast_player_submission_update(game)
+
+        db.session.commit()
+
         # Let players know a new round has started
         broadcast_game_event(Game_Event.ROUND_START, game, game_state)
 
@@ -102,8 +109,14 @@ def manage_game_loop(game_id: int, app: Flask):
         # TODO:
         # - Currently using seconds for debugging, but it should be changed
         # to minutes in the future.
-        # - Handle case where all players submit before the timer expires
-        time.sleep(game.time_limit_minutes)
+        round_end = time.time() + game.time_limit_minutes # * 60
+        while (time.time() < round_end):
+            # Commit before check to sync with other sessions
+            db.session.commit()
+            if (game.num_players_unsubmitted == 0):
+                break
+
+            time.sleep(.5)
 
         if current_round == game.rount_count:
             broadcast_game_event(Game_Event.GAME_END, game)

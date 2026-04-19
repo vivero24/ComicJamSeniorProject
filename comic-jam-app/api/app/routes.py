@@ -2,11 +2,12 @@ import random
 import string
 
 from flask import Blueprint, abort, current_app, jsonify, request, session
+from flask_socketio import emit
 
 from .models import Panel, db, Game, Player, Comic
 from sqlalchemy import select
 
-from .events import broadcast_lobby_update, broadcast_settings_update
+from .events import broadcast_lobby_update, broadcast_player_submission_update, broadcast_settings_update
 
 main = Blueprint("main", __name__, url_prefix='/api')
 
@@ -155,7 +156,7 @@ def change_lobby_settings():
 
     current_app.logger.info(f"Game={game.invite_code}'s settings updated to time_limit={game.time_limit_minutes}")
 
-    broadcast_settings_update(game) 
+    broadcast_settings_update(game)
 
     return ''
 
@@ -180,7 +181,7 @@ def submit_panel():
 
     comic = db.get_or_404(Comic, player.assigned_comic_id)
     image_data = request.get_data()
-
+    
     panel = Panel(comic_id=comic.comic_id,
                   comic=comic,
                   image=image_data)
@@ -189,7 +190,10 @@ def submit_panel():
 
     # Clear assignment to indicate player submitted
     player.assigned_comic_id = None
+    player.game.num_players_unsubmitted -= 1
     db.session.commit()
+
+    broadcast_player_submission_update(player.game)
 
     current_app.logger.debug(f"Player={player.username} submitted panel for Comic={comic.comic_name}")
 

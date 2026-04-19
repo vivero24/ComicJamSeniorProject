@@ -24,6 +24,8 @@ export default function PlayerGame()
     const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit);
     const[isSubmitted, setIsSubmitted] = useState(false);
 
+    const[numPlayersRemaining, setNumPlayersRemaining] = useState(0)
+
     const onDrawingSubmit = async (drawingInfo) => {
         console.log('Drawing submitted');
 
@@ -69,6 +71,10 @@ export default function PlayerGame()
             callback();
         }
 
+        const handleSubmissionUpdate = (json) => {
+            setNumPlayersRemaining(json['playersRemaining'])
+        }
+
         const interval = setInterval(() => {
             // Prevent timer from going negative
             // if server is slow to respond
@@ -84,11 +90,13 @@ export default function PlayerGame()
         socket.on('round-start', handleRoundStart);
         socket.on('round-end', handleRoundEnd);
         socket.on('game-end', handleGameEnd);
+        socket.on('player-submission-update', handleSubmissionUpdate);
 
         return () => {
             socket.off('round-start', handleRoundStart);
             socket.off('round-end', handleRoundEnd);
             socket.off('game-end', handleGameEnd);
+            socket.off('player-submission-update', handleSubmissionUpdate);
             clearInterval(interval);
         }
     }, [isSubmitted])
@@ -101,8 +109,7 @@ export default function PlayerGame()
                     <h1>Player Game Debug</h1>
                     <div>Round {currRound} of {totalRounds}</div>
                     <div>Time Remaining: {timeRemaining}</div>
-                    <div>Players Still drawing:</div>
-                    <div>Players Submitted:</div>
+                    <div>Players Still Working:{numPlayersRemaining}</div>
                 </div>
             </div>
 

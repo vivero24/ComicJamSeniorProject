@@ -72,7 +72,7 @@ def disconnect_handler():
 # Emitter for 'lobby-update' event
 #
 # Broadcasts the usernames of all players in a lobby.
-# Event is send to the SocketIO room keyed by the given game's invide code
+# Event is sent to the SocketIO room keyed by the given game's invide code
 #
 # Sends a JSON array of strings
 def broadcast_lobby_update(game: Game):
@@ -85,7 +85,7 @@ def broadcast_lobby_update(game: Game):
 # Emitter for 'settings-update' event
 #
 # Broadcasts the game's settings to all players in a lobby.
-# Event is send to the SocketIO room keyed by the given game's invide code
+# Event is sent to the SocketIO room keyed by the given game's invide code
 #
 # Sends a JSON of the form:
 #   {
@@ -101,3 +101,21 @@ def broadcast_settings_update(game: Game):
     }
 
     emit('settings-update', settings, broadcast=True, namespace='/', to=game.invite_code)
+
+# Emitter for 'player-submission-update' event
+#
+# Broadcasts the number of players that have not yet submitted their
+# prompt or panel, depending on the phase of the game.
+# Event is sent to the SocketIO room keyed by the given game's invide code
+#
+# Sends a JSON of the form:
+#   {
+#       'playersRemaining': Integer
+#   }
+def broadcast_player_submission_update(game: Game):
+    emit('player-submission-update',
+         {"playersRemaining": game.num_players_unsubmitted},
+         to=game.invite_code,
+         namespace='/')
+
+
