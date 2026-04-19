@@ -11,6 +11,7 @@ import Downloads from './components/Downloads';
 
 import { socket } from './socket';
 import { useState, useEffect } from 'react';
+import DrawScreen from './components/DrawScreen';
 
 function App() //main root component, ties all other components in here
 {
@@ -44,27 +45,27 @@ function App() //main root component, ties all other components in here
     }
 
     function onDisconnect()
-        {
-                setIsConnected(false);
-            }
+    {
+      setIsConnected(false);
+    }
 
-            function updateConnectionCount(userCount)
-        {
-                setConnectionCount(userCount);
-                console.log(userCount);
-            }
+    function updateConnectionCount(userCount)
+    {
+      setConnectionCount(userCount);
+      console.log(userCount);
+    }
 
-            socket.on('connect', onConnect);
-            socket.on('disconnect', onDisconnect);
-            socket.on('user-count-update', updateConnectionCount);
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    socket.on('user-count-update', updateConnectionCount);
 
 
-            return () =>{
-                socket.off('connect', onConnect);
-                socket.off('disconnect', onDisconnect);
+    return () =>{
+        socket.off('connect', onConnect);
+        socket.off('disconnect', onDisconnect);
 
-            }
-        } ,[]);
+    }
+  } ,[]);
 
     return(
         <BrowserRouter>
@@ -77,6 +78,7 @@ function App() //main root component, ties all other components in here
                 <Route path = "/PlayerGame" element = { <PlayerGame/>} />
                 <Route path = "/Showcase" element = { <Showcase/>} />
                 <Route path = "/Downloads" element = { <Downloads/>} />
+                <Route path = "/DrawScreen" element = {<DrawScreen/>}/>
             </Routes>
         </BrowserRouter>
 

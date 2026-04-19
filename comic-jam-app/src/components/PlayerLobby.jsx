@@ -5,9 +5,10 @@ import { useNavigate } from 'react-router-dom';
 export default function PlayerLobby()
 {
     const navigate = useNavigate();
-    // connect to socket at this point, session should be established in JoinGame
     const [players, setPlayers] = useState([]);
     const [inviteCode, setInviteCode] = useState('');
+    const [timeLimit, setTimeLimit] = useState(0);
+    const [numRounds, setNumRounds] = useState(0);
 
     useEffect(() => {
         const handleLobbyUpdate = (json) => {
@@ -16,45 +17,45 @@ export default function PlayerLobby()
         };
 
         const handleSettingsUpdate = (json) => {
-            setInviteCode(json['inviteCode'])
+            setInviteCode(json['inviteCode']);
+            setTimeLimit(json['timeLimit']);
+            setNumRounds(json['numRounds']);
+        };
+
+        // Invoke anonymous "callback" function to acknowledge that the
+        // event was handled
+        const acknowledgeGameStart = (callback) => {
+            callback()
+            navigate('/PlayerGame');
         };
 
         socket.on('lobby-update', handleLobbyUpdate);
         socket.on('settings-update', handleSettingsUpdate);
+        socket.on('game-start-ack-requested', acknowledgeGameStart);
 
-        // IMPORTANT: Only connect the websocket at this point!
-        // Flask sessions only update upon a new socket connection,
-        // so this compromise must be made unless we switch to server-side
-        // sessions
-        socket.connect()
+        socket.connect();
 
         return () => {
-            socket.off('lobby-update', handleLobbyUpdate)
-            socket.off('settings-update', handleSettingsUpdate)
+            socket.off('lobby-update', handleLobbyUpdate);
+            socket.off('settings-update', handleSettingsUpdate);
         }
     }, []);
 
     const onPlayerLeave = async () => {
-        await fetch('/api/leave-lobby')
-        socket.disconnect()
+        await fetch('/api/leave-lobby');
+        socket.disconnect();
         navigate('/');
-
     };
 
     console.log(players);
-
-    // TODO:
-    // Start button should only be visible for the host
-    // Requirements doc states that Lobby Config page should be
-    // a separate component, so perhaps redirecting the host to a
-    // separate page would be best?
-    return(
+        return(
         <>
+        <div id="container">
             <h1>Player Lobby</h1>
             {inviteCode && <h3>Join Code: {inviteCode}</h3>}
-
+            <div className ="inline-flex-parent">
             <div className = "menuContainer" >
-
+                <h2>Players in Lobby:</h2>
                 {players.map((player, index) => (
 
                     <div className = "playerCard" key = {player}>
@@ -63,13 +64,17 @@ export default function PlayerLobby()
                     </div>
 
                 ))}
-
+                </div>
+                <div className = "menuContainer">
+                    <div>Rounds: {numRounds}</div>
+                    <div>Time Limit: {timeLimit} minutes</div>
+                </div>
             </div>
 
             <div className = "buttonContainer">
                 <button onClick = {onPlayerLeave}>Leave Game</button>
             </div>
-
+        </div>
 
         </>
 
