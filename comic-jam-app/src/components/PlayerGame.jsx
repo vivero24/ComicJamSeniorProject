@@ -12,28 +12,23 @@ function WaitingOverlay()
     </>
 }
 
-function PlanningPhase({onPromptSubmitted})
+function PlanningPhase({onPromptSubmitted, promptRef})
 {
     const [prompt, setPrompt] = useState("");
-
+    const handleChange = (e) =>{
+        setPrompt(e.target.value);
+        promptRef.current = e.target.value;
+    }
 
     const onPromptSubmit = () =>
     {
         console.log(prompt);
-        onPromptSubmitted();
-        /*
-        sending the prompt to the db for storage.
-        await fetch('api/submit-panel', {
-            method: 'POST',
-            body: prompt,
-            credentials: 'include'
-        });
-        */
+        onPromptSubmitted(prompt);
     }
 
     return<>
         <h1>Enter a prompt for your panel</h1>
-        <input type = "text" value = {prompt} onChange = {(e) => setPrompt(e.target.value)}></input>
+        <input type = "text" value = {prompt} onChange = {handleChange}></input>
         <button onClick = {onPromptSubmit}>Submit prompt</button>
     </>
 }
@@ -41,6 +36,7 @@ function PlanningPhase({onPromptSubmitted})
 export default function PlayerGame()
 {
     const drawScreenRef = useRef();
+    const promptRef = useRef();
     const navigate = useNavigate();
 
     const[currRound, setCurrRound] = useState(1);
@@ -56,7 +52,6 @@ export default function PlayerGame()
         console.log('Drawing submitted');
 
         if (isSubmitted == false) {
-
             setIsSubmitted(true);
 
             // Send dataURL of image to server
@@ -68,9 +63,17 @@ export default function PlayerGame()
         }
     }
 
-    const onPromptSubmitted = () =>
+    const onPromptSubmitted = (prompt) =>
     {
         setPromptSubmitted(true);
+        /*
+        sending the prompt to the db for storage.
+        await fetch('api/submit-panel', {
+            method: 'POST',
+            body: prompt,
+            credentials: 'include'
+        });
+        */
     }
 
     useEffect(() => {
@@ -98,7 +101,7 @@ export default function PlayerGame()
         const handleRoundEnd = async (callback) => {
             if(currRound == 1 && promptSubmitted != true)
             {
-                await onPromptSubmitted();
+                await onPromptSubmitted(promptRef.current);
             }
             else if (isSubmitted != true) {
                 await drawScreenRef.current.submitDrawing();
@@ -150,7 +153,7 @@ export default function PlayerGame()
             </div>
 
             {currRound === 1 ? 
-                promptSubmitted ? <WaitingOverlay/> : <PlanningPhase onPromptSubmitted = {onPromptSubmitted}/>
+                promptSubmitted ? <WaitingOverlay/> : <PlanningPhase onPromptSubmitted = {onPromptSubmitted} promptRef={promptRef}/>
                  : isSubmitted && timeRemaining > 0 ? <WaitingOverlay/> :
                 <> 
                     <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/>
