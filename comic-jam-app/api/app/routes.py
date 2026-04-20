@@ -132,11 +132,28 @@ def leave_lobby():
 
     return ''
 
+@main.route('/change-lobby-settings', methods=['POST'])
+def change_lobby_settings():
+    if 'host_id' not in session:
+        return 'Error: User is not the host of a lobby', 403
+
+    game = db.get_or_404(Game, session['host_id'])
+    game.time_limit_minutes = request.json['timeLimit']
+    game.rount_count = request.json['numRounds']
+    db.session.commit()
+
+    current_app.logger.info(f"Game={game.invite_code}'s settings updated to time_limit={game.time_limit_minutes}")
+
+    broadcast_settings_update(game)
+
+    return ''
+
+
 #Use the GET endpoint to return the list of comic folders
 @main.route('/list-comics', methods=['GET'])
 def list_comics():
    # Prefer player session, but allow host for showcase
-   player_id = session.get('playerId')
+   player_id = session.get('player_id')
    host_id = session.get('host_id')
 
    if not player_id and not host_id:
@@ -214,3 +231,43 @@ def download_comic(game_id, comic_id):
        as_attachment=True,
        download_name=f"{comic.name}.zip"
     )
+
+
+# /api/submit-panel
+# POST endpoint called when a player submits the panel they were assigned
+# during a round.
+#
+# Expected POST request body:
+#   dataURL representing a PNG
+@main.route('/submit-panel', methods=['POST'])
+def submit_panel():
+    if 'player_id' not in session:
+        return 'Error: user is not a Player', 403
+
+    #db.session.commit()
+
+    player = db.get_or_404(Player, session['player_id'])
+
+    if player.assigned_comic_id is None:
+        current_app.logger.warning(f"Player={player.username} attempted submission without an active assignment")
+        return "Error: Player does not have a comic assigned.", 400
+
+    comic = db.get_or_404(Comic, player.assigned_comic_id)
+    image_data = request.get_data()
+    
+    panel = Panel(comic_id=comic.comic_id,
+                  comic=comic,
+                  image=image_data)
+
+    db.session.add(panel)
+
+    # Clear assignment to indicate player submitted
+    player.assigned_comic_id = None
+    player.game.num_players_unsubmitted -= 1
+    db.session.commit()
+
+    broadcast_player_submission_update(player.game)
+
+    current_app.logger.debug(f"Player={player.username} submitted panel for Comic={comic.comic_name}")
+
+    return ''
