@@ -1,5 +1,5 @@
 import DrawScreen from './DrawScreen';
-import {useState, useEffect, useRef, useImperativeHandle} from 'react';
+import {useState, useEffect, useRef} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { socket } from '../socket.js'
 
@@ -12,19 +12,24 @@ function WaitingOverlay()
     </>
 }
 
-function PlanningPhase({ref})
+function PlanningPhase({onPromptSubmitted})
 {
     const [prompt, setPrompt] = useState("");
+
+
     const onPromptSubmit = () =>
     {
-        //send prompt to the backend
         console.log(prompt);
-
+        onPromptSubmitted();
+        /*
+        sending the prompt to the db for storage.
+        await fetch('api/submit-panel', {
+            method: 'POST',
+            body: prompt,
+            credentials: 'include'
+        });
+        */
     }
-
-    useImperativeHandle(ref,() => ({
-        onPromptSubmit: onPromptSubmit
-    }))
 
     return<>
         <h1>Enter a prompt for your panel</h1>
@@ -36,7 +41,6 @@ function PlanningPhase({ref})
 export default function PlayerGame()
 {
     const drawScreenRef = useRef();
-    const planningRef = useRef();
     const navigate = useNavigate();
 
     const[currRound, setCurrRound] = useState(1);
@@ -44,8 +48,9 @@ export default function PlayerGame()
     const [initialTimeLimit, setInitialTimeLimit] = useState(15);
     const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit);
     const[isSubmitted, setIsSubmitted] = useState(false);
-
     const[numPlayersRemaining, setNumPlayersRemaining] = useState(0)
+    const[promptSubmitted, setPromptSubmitted] = useState(false);
+
 
     const onDrawingSubmit = async (drawingInfo) => {
         console.log('Drawing submitted');
@@ -63,35 +68,38 @@ export default function PlayerGame()
         }
     }
 
+    const onPromptSubmitted = () =>
+    {
+        setPromptSubmitted(true);
+    }
+
     useEffect(() => {
         const handleRoundStart = (json, callback) => {
             console.log(json);
 
             setCurrRound(json['currentRound']);
             setTotalRounds(json['totalRounds']);
-            setTimeRemaining(json['timeLimit']);
+            setTimeRemaining(json['timeLimit'] * 60);
             setIsSubmitted(false)
+            setPromptSubmitted(false)
 
             callback();
         }
 
         const handleGameEnd = async (callback) => {
 
-
             if (isSubmitted != true) {
                 await drawScreenRef.current.submitDrawing();
             }
-
             callback();
             navigate('/Downloads');
         }
 
         const handleRoundEnd = async (callback) => {
-            if(currRound === 1)
+            if(currRound == 1 && promptSubmitted != true)
             {
-                planningRef.current.onPromptSubmit();
+                await onPromptSubmitted();
             }
-
             else if (isSubmitted != true) {
                 await drawScreenRef.current.submitDrawing();
             }
@@ -127,7 +135,7 @@ export default function PlayerGame()
             socket.off('player-submission-update', handleSubmissionUpdate);
             clearInterval(interval);
         }
-    }, [isSubmitted])
+    }, [isSubmitted, currRound, promptSubmitted])
 
     return (
         <>
@@ -141,8 +149,11 @@ export default function PlayerGame()
                 </div>
             </div>
 
-            {currRound === 1 ? <PlanningPhase ref = {planningRef}/> : isSubmitted && timeRemaining > 0 ? <WaitingOverlay/> :
-                <> <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/>
+            {currRound === 1 ? 
+                promptSubmitted ? <WaitingOverlay/> : <PlanningPhase onPromptSubmitted = {onPromptSubmitted}/>
+                 : isSubmitted && timeRemaining > 0 ? <WaitingOverlay/> :
+                <> 
+                    <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/>
                     <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button> 
                 </>}
 
