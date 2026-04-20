@@ -1,3 +1,4 @@
+from io import BytesIO
 from os import path
 import os
 import random
@@ -232,6 +233,9 @@ def list_comics():
 
 @main.route('/download-comic', methods=['GET'])
 def download_comic():
+    if 'player_id' not in session or 'host_id' not in session:
+        abort(403)
+
     comic_id = request.args.get('comicID')
 
     comic = db.get_or_404(Comic, comic_id)
@@ -239,45 +243,20 @@ def download_comic():
 
     path_base = pathlib.Path(f"./temp/{invite_code}/{comic.comic_name}")
     path_base.mkdir(parents=True, exist_ok=True)
-   
-    # TODO: avoid creating files with bytesIO
 
-    panel_paths: List[pathlib.Path] = []
-    for panel in comic.completed_panels:
-        image_URL_raw = data_url.DataURL.from_url(panel.image.decode())
+    comic_archive = BytesIO()
+    with zipfile.ZipFile(comic_archive, 'w') as zip:
+        for panel in comic.completed_panels:
+            image_URL_raw = data_url.DataURL.from_url(panel.image.decode())
 
-        if image_URL_raw is None:
-            error_str = f"Failed to create data URL for panel={panel.panel_id} in comic={comic_id}"
+            if image_URL_raw is None:
+                error_str = f"Failed to create data URL for panel={panel.panel_id} in comic={comic_id}"
 
-            current_app.logger.error(error_str)
-            return error_str, 500
+                current_app.logger.error(error_str)
+                return error_str, 500
 
-        invite_code = comic.owner.game.invite_code
-
-        image_path = pathlib.Path(f"{path_base}/{comic.comic_name}-{panel.panel_id}.png")
-        image_file = open(image_path, 'wb')
-
-        image_data = image_URL_raw.data
-
-        # Explicity checking the types here since
-        # the linter gets mad otherwise
-        if type(image_data) is bytes:
-            image_file.write(image_data)
-        elif type(image_data) is str:
-            image_data = image_data.encode()
-            image_file.write(image_data)
-
-        image_file.close()
-
-        panel_paths.append(image_path)
-
-    # Create ZIP
-   
-    zip_path = pathlib.Path(f"{path_base}/{comic.comic_name}.zip")
-    with zipfile.ZipFile(zip_path, 'w') as zip:
-        for panel_path in panel_paths:
-            zip.write(panel_path, panel_path.name)
-
-    print(f"ZIP PATH: {zip_path.absolute()}")
-    return send_file(zip_path.absolute(),
-                    mimetype='application/zip')
+            URL_data = image_URL_raw.data
+            zip.writestr(f"{comic.comic_name}-{panel.panel_id}.png",
+                         URL_data)
+    comic_archive.seek(0)
+    return send_file(comic_archive, mimetype='application/zip')
