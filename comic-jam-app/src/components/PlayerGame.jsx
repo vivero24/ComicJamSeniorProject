@@ -20,16 +20,16 @@ function PlanningPhase({onPromptSubmitted, promptRef})
         promptRef.current = e.target.value;
     }
 
-    const onPromptSubmit = () =>
+    const submitPrompt = async() =>
     {
-        console.log(prompt);
-        onPromptSubmitted(prompt);
+        await onPromptSubmitted(prompt);
     }
 
     return<>
         <h1>Enter a prompt for your panel</h1>
         <input type = "text" value = {prompt} onChange = {handleChange}></input>
-        <button onClick = {onPromptSubmit}>Submit prompt</button>
+        <br></br>
+        <button onClick = {submitPrompt}>Submit prompt</button>
     </>
 }
 
@@ -63,9 +63,14 @@ export default function PlayerGame()
         }
     }
 
-    const onPromptSubmitted = (prompt) =>
+    const onPromptSubmitted = async (prompt) =>
     {
-        setPromptSubmitted(true);
+        console.log(`prompt ${prompt} was submitted`);
+
+        if (promptSubmitted == false)
+        {
+            setPromptSubmitted(true);
+        }       
         /*
         sending the prompt to the db for storage.
         await fetch('api/submit-panel', {
@@ -99,6 +104,8 @@ export default function PlayerGame()
         }
 
         const handleRoundEnd = async (callback) => {
+            console.log(currRound)
+            console.log(promptSubmitted)
             if(currRound == 1 && promptSubmitted != true)
             {
                 await onPromptSubmitted(promptRef.current);
