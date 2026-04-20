@@ -31,6 +31,8 @@ class Player(db.Model, MappedAsDataclass):
     game_id: Mapped[int] = mapped_column(ForeignKey('game.host_id'), nullable=True)
     game: Mapped["Game"] = relationship(back_populates='players')
 
+    owned_comic: Mapped[Optional['Comic']] = relationship(back_populates='owner')
+
     # A player has exactly one comic
     comic: Mapped["Comic"] = relationship(back_populates='player', uselist=False)
 
