@@ -1,8 +1,13 @@
+from os import path
+import os
 import random
 import string
+from typing import List
+import data_url
+import pathlib
+import zipfile
 
-from flask import Blueprint, abort, current_app, jsonify, request, session
-from flask_socketio import emit
+from flask import Blueprint, abort, current_app, json, jsonify, request, send_file, session
 
 from .models import Panel, db, Game, Player, Comic
 from sqlalchemy import select
@@ -181,7 +186,7 @@ def submit_panel():
 
     comic = db.get_or_404(Comic, player.assigned_comic_id)
     image_data = request.get_data()
-    
+
     panel = Panel(comic_id=comic.comic_id,
                   comic=comic,
                   image=image_data)
@@ -198,3 +203,81 @@ def submit_panel():
     current_app.logger.debug(f"Player={player.username} submitted panel for Comic={comic.comic_name}")
 
     return ''
+
+@main.route('/list-comics', methods=['GET'])
+def list_comics():
+    game: Game
+    if 'host_id' in session:
+        game = db.get_or_404(Game, session['host_id'])
+    elif 'player_id' in session:
+        game = db.get_or_404(Player, session['player_id']).game
+    else:
+        abort(403)
+
+    comics = []
+    for player in game.players:
+        curr_comic = player.owned_comic
+
+        if curr_comic is None:
+            continue
+
+        comic_json = {
+            'comicID': curr_comic.comic_id,
+            'comicName': curr_comic.comic_name
+        }
+
+        comics.append(comic_json)
+
+    return jsonify(comics)
+
+@main.route('/download-comic', methods=['GET'])
+def download_comic():
+    comic_id = request.args.get('comicID')
+
+    comic = db.get_or_404(Comic, comic_id)
+    invite_code = comic.owner.game.invite_code
+
+    path_base = pathlib.Path(f"./temp/{invite_code}/{comic.comic_name}")
+    path_base.mkdir(parents=True, exist_ok=True)
+   
+    # TODO: avoid creating files with bytesIO
+
+    panel_paths: List[pathlib.Path] = []
+    for panel in comic.completed_panels:
+        image_URL_raw = data_url.DataURL.from_url(panel.image.decode())
+
+        if image_URL_raw is None:
+            error_str = f"Failed to create data URL for panel={panel.panel_id} in comic={comic_id}"
+
+            current_app.logger.error(error_str)
+            return error_str, 500
+
+        invite_code = comic.owner.game.invite_code
+
+        image_path = pathlib.Path(f"{path_base}/{comic.comic_name}-{panel.panel_id}.png")
+        image_file = open(image_path, 'wb')
+
+        image_data = image_URL_raw.data
+
+        # Explicity checking the types here since
+        # the linter gets mad otherwise
+        if type(image_data) is bytes:
+            image_file.write(image_data)
+        elif type(image_data) is str:
+            image_data = image_data.encode()
+            image_file.write(image_data)
+
+        image_file.close()
+
+        panel_paths.append(image_path)
+
+    # Create ZIP
+   
+    zip_path = pathlib.Path(f"{path_base}/{comic.comic_name}.zip")
+    with zipfile.ZipFile(zip_path, 'w') as zip:
+        for panel_path in panel_paths:
+            zip.write(panel_path, panel_path.name)
+
+    print(f"ZIP PATH: {zip_path.absolute()}")
+    return send_file(zip_path.absolute(),
+                    mimetype='application/zip')
