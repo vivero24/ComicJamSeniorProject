@@ -12,25 +12,46 @@ function WaitingOverlay()
     </>
 }
 
+function PlanningPhase({onPromptSubmitted, promptRef})
+{
+    const [prompt, setPrompt] = useState("");
+    const handleChange = (e) =>{
+        setPrompt(e.target.value);
+        promptRef.current = e.target.value;
+    }
+
+    const submitPrompt = async() =>
+    {
+        await onPromptSubmitted(prompt);
+    }
+
+    return<>
+        <h1>Enter a prompt for your panel</h1>
+        <input type = "text" value = {prompt} onChange = {handleChange}></input>
+        <br></br>
+        <button onClick = {submitPrompt}>Submit prompt</button>
+    </>
+}
 
 export default function PlayerGame()
 {
     const drawScreenRef = useRef();
+    const promptRef = useRef();
     const navigate = useNavigate();
 
-    const[currRound, setCurrRound] = useState(0);
+    const[currRound, setCurrRound] = useState(1);
     const[totalRounds, setTotalRounds] = useState(0);
     const [initialTimeLimit, setInitialTimeLimit] = useState(15);
     const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit);
     const[isSubmitted, setIsSubmitted] = useState(false);
-
     const[numPlayersRemaining, setNumPlayersRemaining] = useState(0)
+    const[promptSubmitted, setPromptSubmitted] = useState(false);
+
 
     const onDrawingSubmit = async (drawingInfo) => {
         console.log('Drawing submitted');
 
         if (isSubmitted == false) {
-
             setIsSubmitted(true);
 
             // Send dataURL of image to server
@@ -42,29 +63,54 @@ export default function PlayerGame()
         }
     }
 
+    const onPromptSubmitted = async (prompt) =>
+    {
+        console.log(`prompt ${prompt} was submitted`);
+
+        if (promptSubmitted == false)
+        {
+            setPromptSubmitted(true);
+        }       
+        /*
+        sending the prompt to the db for storage.
+        await fetch('api/submit-panel', {
+            method: 'POST',
+            body: prompt,
+            credentials: 'include'
+        });
+        */
+    }
+
     useEffect(() => {
         const handleRoundStart = (json, callback) => {
             console.log(json);
 
             setCurrRound(json['currentRound']);
             setTotalRounds(json['totalRounds']);
-            setTimeRemaining(json['timeLimit']);
+            setTimeRemaining(json['timeLimit'] * 60);
             setIsSubmitted(false)
+            setPromptSubmitted(false)
 
             callback();
         }
 
         const handleGameEnd = async (callback) => {
+
             if (isSubmitted != true) {
                 await drawScreenRef.current.submitDrawing();
             }
-
             callback();
             navigate('/Downloads');
         }
 
         const handleRoundEnd = async (callback) => {
-            if (isSubmitted != true) {
+            console.log(currRound)
+            console.log(promptSubmitted)
+            if(currRound == 1 && promptSubmitted != true)
+            {
+                await onPromptSubmitted(promptRef.current);
+            }
+            else if (isSubmitted != true) {
                 await drawScreenRef.current.submitDrawing();
             }
 
@@ -99,7 +145,7 @@ export default function PlayerGame()
             socket.off('player-submission-update', handleSubmissionUpdate);
             clearInterval(interval);
         }
-    }, [isSubmitted])
+    }, [isSubmitted, currRound, promptSubmitted])
 
     return (
         <>
@@ -113,8 +159,11 @@ export default function PlayerGame()
                 </div>
             </div>
 
-            {isSubmitted && timeRemaining > 0 ? <WaitingOverlay/> :
-                <> <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/>
+            {currRound === 1 ? 
+                promptSubmitted ? <WaitingOverlay/> : <PlanningPhase onPromptSubmitted = {onPromptSubmitted} promptRef={promptRef}/>
+                 : isSubmitted && timeRemaining > 0 ? <WaitingOverlay/> :
+                <> 
+                    <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/>
                     <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button> 
                 </>}
 

@@ -109,7 +109,7 @@ def manage_game_loop(game_id: int, app: Flask):
         # TODO:
         # - Currently using seconds for debugging, but it should be changed
         # to minutes in the future.
-        round_end = time.time() + game.time_limit_minutes # * 60
+        round_end = time.time() + game.time_limit_minutes  * 60
         while (time.time() < round_end):
             # Commit before check to sync with other sessions
             db.session.commit()
