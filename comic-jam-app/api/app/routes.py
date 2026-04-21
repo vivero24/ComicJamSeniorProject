@@ -133,6 +133,19 @@ def leave_lobby():
 
     return ''
 
+# /api/change-lobby-settings
+# POST endpoint called when a host updates the settings of their lobby
+#
+# Updates the game's settings and broadcasts a 'settings-update' to all
+# players in the lobby
+#
+# Expected POST request body:
+#   JSON:
+#   {
+#       "timeLimit": Integer,
+#       "numRounds": Integer
+#       # NOTE: Other fields TBD
+#   }
 @main.route('/change-lobby-settings', methods=['POST'])
 def change_lobby_settings():
     if 'host_id' not in session:
