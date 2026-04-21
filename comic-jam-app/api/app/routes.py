@@ -6,6 +6,7 @@ from flask_socketio import emit
 
 from .models import Panel, db, Game, Player, Comic
 from sqlalchemy import select
+from . import socketio
 
 from .events import broadcast_lobby_update, broadcast_player_submission_update, broadcast_settings_update
 
@@ -84,6 +85,12 @@ def create_lobby():
     # TODO: handle case where this user already has a
     # session, delete player or game from database
 
+    if 'host_id' in session:
+        existing_game = Game.query.filter_by(host_id=session['host_id']).first()
+        if existing_game:
+            broadcast_settings_update(existing_game)
+            return jsonify({'invite_code': existing_game.invite_code, 'already_exists': True})
+        session.pop('host_id', None)
     game = Game(invite_code=generate_game_code(), players=[])
 
     db.session.add(game)
@@ -93,7 +100,7 @@ def create_lobby():
     # Create new flask session for this host
     session['host_id'] = game.host_id
 
-    return jsonify({'invite_code': game.invite_code})
+    return jsonify({'invite_code': game.invite_code, 'already_exists': False})
 
 # /api/leave-lobby
 # GET endpoint called when user requests to leave a lobby
@@ -117,11 +124,29 @@ def leave_lobby():
         session.pop('player_id')
 
         broadcast_lobby_update(game)
-    elif 'host_id' in session:
+    else:
+        return abort(403)
+
+    db.session.commit()
+
+    return ''
+
+@main.route('/close-lobby')
+def close_lobby():
+    # TODO: 
+    # when host closes the lobby, remove all players and delete the lobby from the DB
+
+    if 'host_id' in session:
         # TODO: handle game deletion, maybe place host deletion in a different
         # endpoint entirely? /api/close-lobby
         game = db.get_or_404(Game, session['host_id'])
         current_app.logger.debug(f"Host closed Game={game.invite_code}, deleting...")
+        for player in game.players:
+            try:
+                socketio.call('lobby-closed', to=player.socket_id, timeout=10)
+            except TimeoutError:
+                print("timeout error whoopsies")
+        #emit('lobby-closed', broadcast=True, namespace='/', to=game.invite_code)
         db.session.delete(game)
         session.pop('host_id')
     else:

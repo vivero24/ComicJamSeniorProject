@@ -17,7 +17,7 @@ export default function CreateLobby({ onDataSend })
     const[inviteCode, setInviteCode] = useState("")
     const[players, setPlayers] = useState([]);
     const[numOfRounds, setNumOfRounds] = useState(4);
-    const[timeLimit, setTimeLimit] = useState(30);
+    const[timeLimit, setTimeLimit] = useState(5);
 
     useEffect(() => {
         socket.connect();
@@ -73,8 +73,8 @@ export default function CreateLobby({ onDataSend })
         }
     }
 
-    const closeLobby = () => {
-        //socket.emit('host-closed-lobby');
+    const closeLobby = async () => {
+        await fetch('/api/close-lobby');
         socket.disconnect();
         navigate('/');
     }

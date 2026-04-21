@@ -11,6 +11,12 @@ export default function PlayerLobby()
     const [numRounds, setNumRounds] = useState(0);
 
     useEffect(() => {
+        if (sessionStorage.getItem("leftLobby") === "true") {
+            sessionStorage.removeItem("leftLobby");
+            navigate('/');
+            return;
+        }
+
         const handleLobbyUpdate = (json) => {
             console.log('lobby-update received: ', json);
             setPlayers(json);
@@ -29,15 +35,36 @@ export default function PlayerLobby()
             navigate('/PlayerGame');
         };
 
+        const handlePageLeave = async () => {
+            sessionStorage.setItem("leftLobby", "true");
+            await fetch('/api/leave-lobby');
+            socket.disconnect();
+        };
+        
+        const handleLobbyClosed = async (callback) => {
+            alert("Host closed the lobby.");
+            callback();
+            onPlayerLeave();
+        };
+
+        socket.on('lobby-closed', handleLobbyClosed);
+
         socket.on('lobby-update', handleLobbyUpdate);
         socket.on('settings-update', handleSettingsUpdate);
         socket.on('game-start-ack-requested', acknowledgeGameStart);
 
         socket.connect();
 
+        window.addEventListener('beforeunload', handlePageLeave);
+        window.addEventListener('pagehide', handlePageLeave);
+
         return () => {
             socket.off('lobby-update', handleLobbyUpdate);
             socket.off('settings-update', handleSettingsUpdate);
+            socket.off('lobby-closed', handleLobbyClosed);
+
+            window.removeEventListener('beforeunload', handlePageLeave);
+            window.removeEventListener('pagehide', handlePageLeave);
         }
     }, []);
 

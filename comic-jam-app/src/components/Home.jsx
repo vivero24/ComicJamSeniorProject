@@ -15,9 +15,8 @@ export default function Home()
         .then(data => {
             console.log('Created lobby with invite code: ', data.invite_code);
             navigate('/CreateLobby');
-            onDataSend(lobby, data.invite_code);
+            //onDataSend(lobby, data.invite_code);
         });
-
     }
 
     const navigateToJoinGame = () => {
