@@ -1,3 +1,4 @@
+import enum
 from io import BytesIO
 from os import path
 import os
@@ -192,6 +193,8 @@ def submit_panel():
                   comic=comic,
                   image=image_data)
 
+    
+
     db.session.add(panel)
 
     # Clear assignment to indicate player submitted
@@ -224,11 +227,13 @@ def list_comics():
 
         comic_json = {
             'comicID': curr_comic.comic_id,
-            'comicName': curr_comic.comic_name
+            'comicName': curr_comic.comic_name,
+            'creator': curr_comic.owner.username
         }
 
         comics.append(comic_json)
-
+    
+    print(comics)
     return jsonify(comics)
 
 @main.route('/download-comic', methods=['GET'])
@@ -241,12 +246,9 @@ def download_comic():
     comic = db.get_or_404(Comic, comic_id)
     invite_code = comic.owner.game.invite_code
 
-    path_base = pathlib.Path(f"./temp/{invite_code}/{comic.comic_name}")
-    path_base.mkdir(parents=True, exist_ok=True)
-
     comic_archive = BytesIO()
     with zipfile.ZipFile(comic_archive, 'w') as zip:
-        for panel in comic.completed_panels:
+        for idx, panel in enumerate(comic.completed_panels):
             image_URL_raw = data_url.DataURL.from_url(panel.image.decode())
 
             if image_URL_raw is None:
@@ -256,7 +258,7 @@ def download_comic():
                 return error_str, 500
 
             URL_data = image_URL_raw.data
-            zip.writestr(f"{comic.comic_name}-{panel.panel_id}.png",
+            zip.writestr(f"{comic.comic_name}-{idx+1}.png",
                          URL_data)
     comic_archive.seek(0)
     return send_file(comic_archive, mimetype='application/zip')
