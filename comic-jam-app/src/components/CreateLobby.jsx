@@ -17,7 +17,7 @@ export default function CreateLobby({ onDataSend })
     const[inviteCode, setInviteCode] = useState("")
     const[players, setPlayers] = useState([]);
     const[numOfRounds, setNumOfRounds] = useState(4);
-    const[timeLimit, setTimeLimit] = useState(5);
+    const[timeLimit, setTimeLimit] = useState(30);
 
     useEffect(() => {
         socket.connect();
@@ -98,10 +98,10 @@ export default function CreateLobby({ onDataSend })
                             <input type = "number"
                                 id = "numOfRounds"
                                 name = "numOfRounds"
-                                min = "1"
-                                max = "4"
+                                min = "3"
+                                max = "8"
                                 value = {numOfRounds}
-                                onChange={e => { setNumOfRounds(e.target.value)}}>
+                                onChange={e => { setNumOfRounds(restrictNumVal(e.target.value, e.target.min, e.target.max))}}>
                             </input> <br></br>
                         </div>
 
@@ -110,10 +110,10 @@ export default function CreateLobby({ onDataSend })
                             <input type = "number"
                                 id = "timeLimit"
                                 name = "timeLimit"
-                                min = "1"
-                                max = "10"
+                                min = "30"
+                                max = "300"
                                 value = {timeLimit}
-                                onChange={e => { setTimeLimit(e.target.value)}}>
+                                onChange={e => { setTimeLimit(restrictNumVal(e.target.value, e.target.min, e.target.max))}}>
                             </input> <br></br>
                         </div>
                     </div>

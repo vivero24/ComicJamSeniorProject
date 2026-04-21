@@ -1,17 +1,12 @@
-import enum
 from io import BytesIO
-from os import path
-import os
 import random
 import string
-from typing import List
 import data_url
-import pathlib
 import zipfile
 
-from flask import Blueprint, abort, current_app, json, jsonify, request, send_file, session
+from flask import Blueprint, abort, current_app, jsonify, request, send_file, session
 
-from .models import Panel, db, Game, Player, Comic
+from .models import db, Game, Player, Comic, Panel
 from sqlalchemy import select
 
 from .events import broadcast_lobby_update, broadcast_player_submission_update, broadcast_settings_update
@@ -138,19 +133,6 @@ def leave_lobby():
 
     return ''
 
-# /api/change-lobby-settings
-# POST endpoint called when a host updates the settings of their lobby
-#
-# Updates the game's settings and broadcasts a 'settings-update' to all
-# players in the lobby
-#
-# Expected POST request body:
-#   JSON:
-#   {
-#       "timeLimit": Integer,
-#       "numRounds": Integer
-#       # NOTE: Other fields TBD
-#   }
 @main.route('/change-lobby-settings', methods=['POST'])
 def change_lobby_settings():
     if 'host_id' not in session:
@@ -244,7 +226,6 @@ def download_comic():
     comic_id = request.args.get('comicID')
 
     comic = db.get_or_404(Comic, comic_id)
-    invite_code = comic.owner.game.invite_code
 
     comic_archive = BytesIO()
     with zipfile.ZipFile(comic_archive, 'w') as zip:
@@ -262,3 +243,4 @@ def download_comic():
                          URL_data)
     comic_archive.seek(0)
     return send_file(comic_archive, mimetype='application/zip')
+    return ''
