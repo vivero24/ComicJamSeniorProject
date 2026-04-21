@@ -33,10 +33,6 @@ class Player(db.Model, MappedAsDataclass):
 
     owned_comic: Mapped[Optional['Comic']] = relationship(back_populates='owner')
 
-    # A player has exactly one comic
-    comic: Mapped["Comic"] = relationship(back_populates='player', uselist=False)
-
-
     assigned_comic_id: Mapped[Optional[int]]
     # Unused until the sketch phase is implemented.
     # It might also be worth combining these into a tuple
@@ -51,27 +47,20 @@ class Player(db.Model, MappedAsDataclass):
 # the many-to-one relationship
 class Comic(db.Model, MappedAsDataclass):
     __tablename__ = 'comic'
-    
     comic_id:  Mapped[int] = mapped_column(primary_key=True, autoincrement=True, init=False)
+    comic_name: Mapped[str]
 
-    # Required by routes.py
-    name: Mapped[str]
-
-    # Connect Comic to Player (one-to-one)
-    player_id: Mapped[int] = mapped_column(ForeignKey('player.player_id'), unique=True)
-    player: Mapped["Player"] = relationship(back_populates='comic')
-
-    # Comic has many panels
-    panels: Mapped[List["Panel"]] = relationship(back_populates='comic')
+    owner_id: Mapped[int] = mapped_column(ForeignKey('player.player_id'))
+    owner: Mapped['Player'] = relationship(back_populates='owned_comic')
+    completed_panels: Mapped[List['Panel']] = relationship(back_populates='comic')
+    # sketch_panels --- unimplemented for now
 
 class Panel(db.Model, MappedAsDataclass):
     __tablename__ = 'panel'
-    
+
     panel_id:  Mapped[int] = mapped_column(primary_key=True, autoincrement=True, init=False)
 
-    # Connect Panel to the Comic
     comic_id: Mapped[int] = mapped_column(ForeignKey('comic.comic_id'))
-    comic: Mapped["Comic"] = relationship(back_populates='panels')
-
+    comic: Mapped['Comic'] = relationship(back_populates='completed_panels')
 
     image: Mapped[bytes] = mapped_column(LargeBinary)
