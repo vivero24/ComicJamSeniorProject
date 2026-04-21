@@ -3,9 +3,9 @@ import string
 import io
 import zipfile
 
-from flask import Blueprint, abort, jsonify, request, session, send_file
+from flask import Blueprint, abort, jsonify, request, session, send_file, current_app
 
-from .models import db, Game, Player, Comic
+from .models import db, Game, Player, Comic, Panel
 from sqlalchemy import select
 
 from .events import broadcast_lobby_update, broadcast_player_submission_update, broadcast_settings_update
@@ -178,7 +178,7 @@ def list_comics():
        if p.comic:
            comics.append({
                "comicId": p.comic.comic_id,
-               "name": p.comic.name
+               "name": p.comic.comic_name
            })
 
    return jsonify({"comics": comics})
@@ -212,14 +212,14 @@ def download_comic(game_id, comic_id):
     # Fetch the comic
     comic = db.get_or_404(Comic, comic_id)
 
-    # Ensure the comic belongs to a player in the same game
-    if not comic.player or comic.player.game_id != game.host_id:
+    # Ensure the comic belongs to an owner in the same game
+    if not comic.owner or comic.owner.game_id != game.host_id:
         return {"error": "Comic does not belong to this game"}, 403
 
     # Create ZIP in memory
     memory_file = io.BytesIO()
     with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
-       for idx, panel in enumerate(comic.panels):
+       for idx, panel in enumerate(comic.completed_panels):
            filename = f"panel_{idx + 1}.png"
            zipf.writestr(filename, panel.image)
 
@@ -229,7 +229,7 @@ def download_comic(game_id, comic_id):
        memory_file,
        mimetype='application/zip',
        as_attachment=True,
-       download_name=f"{comic.name}.zip"
+       download_name=f"{comic.comic_name}.zip"
     )
 
 
