@@ -13,7 +13,9 @@ to install the project the dependencies.
 ### Running
 After completing the setup, the webapp can be run with the command:
 
-```npm run dev```
+Windows: ```npm run dev-windows```
+Linux: ```npm run dev```
+
 ###
 
 ## Flask Server
@@ -24,7 +26,7 @@ While inside the ```comic-jam-app/api/``` directory, create a virtual environmen
 
 Then, activate the virtual environment:
 
-Windows:```venv\Scripts\activate```
+Windows:```.\venv\Scripts\activate```
 
 Linux/macOS:```source .venv/bin/activate``` 
 
