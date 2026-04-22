@@ -31,7 +31,7 @@ export default function PlayerLobby()
         // Invoke anonymous "callback" function to acknowledge that the
         // event was handled
         const acknowledgeGameStart = (callback) => {
-            callback()
+            callback();
             navigate('/PlayerGame');
         };
 
@@ -40,11 +40,11 @@ export default function PlayerLobby()
             await fetch('/api/leave-lobby');
             socket.disconnect();
         };
-        
-        const handleLobbyClosed = async (callback) => {
-            alert("Host closed the lobby.");
+
+        const handleLobbyClosed = (callback) => {
             callback();
-            onPlayerLeave();
+            socket.disconnect()
+            navigate('/')
         };
 
         socket.on('lobby-closed', handleLobbyClosed);
@@ -62,6 +62,7 @@ export default function PlayerLobby()
             socket.off('lobby-update', handleLobbyUpdate);
             socket.off('settings-update', handleSettingsUpdate);
             socket.off('lobby-closed', handleLobbyClosed);
+            socket.off('game-start-ack-requested', acknowledgeGameStart);
 
             window.removeEventListener('beforeunload', handlePageLeave);
             window.removeEventListener('pagehide', handlePageLeave);

@@ -122,7 +122,6 @@ def leave_lobby():
         current_app.logger.debug(f"Player={player.username} left Game={game.invite_code}, deleting...")
         db.session.delete(player)
         session.pop('player_id')
-
         broadcast_lobby_update(game)
     else:
         return abort(403)
@@ -135,24 +134,32 @@ def leave_lobby():
 def close_lobby():
     # TODO: 
     # when host closes the lobby, remove all players and delete the lobby from the DB
+    if 'host_id' not in session:
+        abort(403)
 
-    if 'host_id' in session:
-        # TODO: handle game deletion, maybe place host deletion in a different
-        # endpoint entirely? /api/close-lobby
-        game = db.get_or_404(Game, session['host_id'])
-        current_app.logger.debug(f"Host closed Game={game.invite_code}, deleting...")
-        for player in game.players:
-            try:
-                socketio.call('lobby-closed', to=player.socket_id, timeout=10)
-            except TimeoutError:
-                print("timeout error whoopsies")
-        #emit('lobby-closed', broadcast=True, namespace='/', to=game.invite_code)
-        db.session.delete(game)
-        session.pop('host_id')
-    else:
-        return abort(403)
+    game = db.get_or_404(Game, session['host_id'])
 
+    # If user is also a player in the game they are hosting, clear the player_id too
+    if 'player_id' in session:
+        player = db.get_or_404(Player, session['player_id'])
+
+        if game.host_id == player.game_id:
+            session.pop('player_id')
+
+    current_app.logger.debug(f"Host closed Game={game.invite_code}, deleting...")
+
+    for player in game.players:
+        try:
+            # Require players to acknowledge lobby closure before deleting them
+            socketio.call('lobby-closed', to=player.socket_id, timeout=10)
+            db.session.delete(player)
+        except TimeoutError:
+            print("timeout error whoopsies")
+
+    db.session.delete(game)
     db.session.commit()
+
+    session.pop('host_id')
 
     return ''
 
