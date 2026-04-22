@@ -47,4 +47,5 @@ This will install and run the pipreqs utility, which generates a new requirement
 After completing the setup, the server can be run with the command:
 
 Linux/macOS: ```npm run api```
+
 Windows: ```npm run api-windows```
