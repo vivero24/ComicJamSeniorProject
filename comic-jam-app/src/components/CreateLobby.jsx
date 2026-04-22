@@ -101,7 +101,10 @@ export default function CreateLobby({ onDataSend })
                                 min = "3"
                                 max = "8"
                                 value = {numOfRounds}
-                                onChange={e => { setNumOfRounds(restrictNumVal(e.target.value, e.target.min, e.target.max))}}>
+                                onChange={e => { 
+                                    setNumOfRounds(restrictNumVal(parseInt(e.target.value),
+                                        parseInt(e.target.min),
+                                        parseInt(e.target.max)))}}>
                             </input> <br></br>
                         </div>
 
@@ -113,7 +116,11 @@ export default function CreateLobby({ onDataSend })
                                 min = "30"
                                 max = "300"
                                 value = {timeLimit}
-                                onChange={e => { setTimeLimit(restrictNumVal(e.target.value, e.target.min, e.target.max))}}>
+                                onChange={e => { 
+                                    setTimeLimit(
+                                        restrictNumVal(parseInt(e.target.value),
+                                        parseInt(e.target.min),
+                                        parseInt(e.target.max)))}}>
                             </input> <br></br>
                         </div>
                     </div>
