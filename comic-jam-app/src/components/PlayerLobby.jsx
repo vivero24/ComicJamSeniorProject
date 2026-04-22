@@ -13,6 +13,7 @@ export default function PlayerLobby()
     useEffect(() => {
         if (sessionStorage.getItem("leftLobby") === "true") {
             sessionStorage.removeItem("leftLobby");
+            socket.disconnect();
             navigate('/');
             return;
         }
@@ -37,17 +38,24 @@ export default function PlayerLobby()
 
         const handlePageLeave = async () => {
             sessionStorage.setItem("leftLobby", "true");
-            await fetch('/api/leave-lobby');
-            socket.disconnect();
+            await onPlayerLeave();
         };
 
         const handleLobbyClosed = (callback) => {
             callback();
-            socket.disconnect()
-            navigate('/')
+            socket.disconnect();
+            navigate('/');
         };
 
+        const handleKickedPlayer = (callback) => {
+            callback();
+            socket.disconnect();
+            navigate('/');
+            alert("You have been kicked from the lobby!");
+        }
+
         socket.on('lobby-closed', handleLobbyClosed);
+        socket.on('player-kicked', handleKickedPlayer);
 
         socket.on('lobby-update', handleLobbyUpdate);
         socket.on('settings-update', handleSettingsUpdate);
@@ -80,14 +88,14 @@ export default function PlayerLobby()
         <>
         <div id="container">
             <h1>Player Lobby</h1>
-            {inviteCode && <h3>Join Code: {inviteCode}</h3>}
+            {<h3>Join Code: {inviteCode}</h3>}
             <div className ="inline-flex-parent">
             <div className = "menuContainer" >
                 <h2>Players in Lobby:</h2>
                 {players.map((player, index) => (
 
-                    <div className = "playerCard" key = {player}>
-                        <h4>{player}</h4>
+                    <div className = "playerCard" key = {player.ID}>
+                        <h4>{player.username}</h4>
                         <img src = "/defaultpfp.png" id = "defaultPicture" width = "40" height = "40"></img>
                     </div>
 

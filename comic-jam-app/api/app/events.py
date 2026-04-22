@@ -76,11 +76,15 @@ def disconnect_handler():
 #
 # Sends a JSON array of strings
 def broadcast_lobby_update(game: Game):
-    usernames = []
+    players = []
     for p in game.players:
-        usernames.append(p.username)
+        player = {
+            'username': p.username,
+            'ID': p.player_id
+        }
+        players.append(player);
 
-    emit('lobby-update', usernames, broadcast=True, namespace='/', to=game.invite_code)
+    emit('lobby-update', players, broadcast=True, namespace='/', to=game.invite_code)
 
 # Emitter for 'settings-update' event
 #

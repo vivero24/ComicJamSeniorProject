@@ -130,6 +130,25 @@ def leave_lobby():
 
     return ''
 
+@main.route('/kick-player')
+def kick_player():
+    # TODO: 
+    # Determine which player to kick from lobby based of ID
+
+    player_id = request.args.get("player_id")
+    found_player = db.get_or_404(Player, player_id)
+    game = found_player.game
+
+    socketio.call('player-kicked', to=found_player.socket_id, timeout=10)
+
+    db.session.delete(found_player)
+    session.pop('player_id')
+    broadcast_lobby_update(game)
+
+    db.session.commit()
+
+    return ''
+
 @main.route('/close-lobby')
 def close_lobby():
     # TODO: 

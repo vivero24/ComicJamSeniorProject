@@ -20,22 +20,48 @@ export default function CreateLobby({ onDataSend })
     const[timeLimit, setTimeLimit] = useState(5);
 
     useEffect(() => {
-        socket.connect();
+        const onReload = async () => {
+            if (sessionStorage.getItem("leftLobby") === "true") {
+                sessionStorage.removeItem("leftLobby");
+                try{
+                    await fetch('/api/close-lobby');
+                } catch {
+                    print("Tried to close lobby, error on reload")
+                }
+                socket.disconnect();
+                navigate('/');
+                return;
+            }
+        }
+        onReload()
 
-        const handleLobbyUpdate = (usernames) => {
-            setPlayers(usernames);
+        const handleLobbyUpdate = (players) => {
+            setPlayers(players);
         };
 
         const handleSettingsUpdate = (json) => {
             setInviteCode(json['inviteCode']);
         };
 
+        const handlePageLeave = async () => {
+            sessionStorage.setItem("leftLobby", "true");
+            await closeLobby();
+        };
+
         socket.on('lobby-update', handleLobbyUpdate);
         socket.on('settings-update', handleSettingsUpdate);
+
+        socket.connect();
+
+        window.addEventListener('beforeunload', handlePageLeave);
+        window.addEventListener('pagehide', handlePageLeave);
 
         return () => {
             socket.off('lobby-update', handleLobbyUpdate);
             socket.off('settings-update', handleSettingsUpdate);
+            
+            window.removeEventListener('beforeunload', handlePageLeave);
+            window.removeEventListener('pagehide', handlePageLeave);
         }
     }, []);
 
@@ -85,6 +111,10 @@ export default function CreateLobby({ onDataSend })
         return value;
     };
 
+    const kickPlayer = async (playerToKick) => {
+        await fetch('/api/kick-player?player_id='+playerToKick)
+    }
+
     return (
         <>
             <div id="container">
@@ -122,9 +152,10 @@ export default function CreateLobby({ onDataSend })
                         <h4>Players Joined</h4>
                         {players.length === 0 && <p>No players joined yet.</p>}
                         {players.map((player) => (
-                            <div className = "playerCard" key = {player}>
-                                <h4>{player}</h4>
+                            <div className = "playerCard" key = {player.ID}>
+                                <h4>{player.username}</h4>
                                 <img src = "/defaultpfp.png" id = "defaultPicture" width = "40" height = "40"></img>
+                                <button className="button-start" onClick={() => kickPlayer(player.ID)}>Kick Player</button>
                             </div>
                         ))}
                     </div>
