@@ -66,18 +66,20 @@ def manage_game_loop(game_id: int, app: Flask):
     # "Parent instance not bound to session" errors pop up.
     game = db.get_or_404(Game, game_id)
 
+    
     # Create comics for all players
     for player in game.players:
         # TODO: Allow users to specify their comic's name
         comic = Comic(comic_name='unnamed',
                       owner_id=player.player_id,
                       owner=player,
-                      completed_panels=[])
+                      completed_panels=[],
+                      panel_prompts=[])
 
         db.session.add(comic)
 
     db.session.commit()
-
+    
     # Let all players know game has started
     broadcast_game_event(Game_Event.GAME_START, game)
 
@@ -109,7 +111,7 @@ def manage_game_loop(game_id: int, app: Flask):
         # TODO:
         # - Currently using seconds for debugging, but it should be changed
         # to minutes in the future.
-        round_end = time.time() + game.time_limit_minutes  * 60
+        round_end = time.time() + game.time_limit_minutes
         while (time.time() < round_end):
             # Commit before check to sync with other sessions
             db.session.commit()

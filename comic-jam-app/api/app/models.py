@@ -1,6 +1,6 @@
 from typing import List, Optional
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import ForeignKey, LargeBinary
+from sqlalchemy import ARRAY, JSON, ForeignKey, LargeBinary, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, relationship
 
 class Base(MappedAsDataclass, DeclarativeBase):
@@ -48,12 +48,13 @@ class Player(db.Model, MappedAsDataclass):
 class Comic(db.Model, MappedAsDataclass):
     __tablename__ = 'comic'
     comic_id:  Mapped[int] = mapped_column(primary_key=True, autoincrement=True, init=False)
-    comic_name: Mapped[str]
 
     owner_id: Mapped[int] = mapped_column(ForeignKey('player.player_id'))
     owner: Mapped['Player'] = relationship(back_populates='owned_comic')
     completed_panels: Mapped[List['Panel']] = relationship(back_populates='comic')
+    panel_prompts: Mapped[List[str]] = mapped_column(JSON)
     # sketch_panels --- unimplemented for now
+    comic_name: Mapped[str] = mapped_column(default='unnamed')
 
 class Panel(db.Model, MappedAsDataclass):
     __tablename__ = 'panel'

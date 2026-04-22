@@ -10,6 +10,8 @@ import { socket } from '../socket.js'
 // TODO: 
 // - Update lobby with players as they join
 // - Send settings to the server as they are updated
+// - Specify that rounds means amount of rounds spent drawing
+// - Display +1 rounds everywhere else (Host inputs 8 rounds, displays 9)
 export default function CreateLobby({ onDataSend })
 {
     const navigate = useNavigate();
@@ -113,8 +115,8 @@ export default function CreateLobby({ onDataSend })
                             <input type = "number"
                                 id = "timeLimit"
                                 name = "timeLimit"
-                                min = "30"
-                                max = "300"
+                                min = "1"
+                                max = "10"
                                 value = {timeLimit}
                                 onChange={e => { 
                                     setTimeLimit(

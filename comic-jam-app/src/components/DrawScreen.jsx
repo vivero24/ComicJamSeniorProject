@@ -8,7 +8,6 @@ export default function DrawScreen({onDrawingSubmit, ref})
         await onDrawingSubmit(imageData)
     }
 
-
     useImperativeHandle(ref, () =>({
         submitDrawing: submitDrawing
         }
@@ -178,6 +177,7 @@ export default function DrawScreen({onDrawingSubmit, ref})
                         </div>
                     </div>
                 </div>
+                <div>PROMPT HERE</div>
                 <div ref = {canvasRef} id="canvas"></div>
             </div>
         </>

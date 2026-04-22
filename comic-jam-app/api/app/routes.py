@@ -2,7 +2,6 @@ import random
 import string
 
 from flask import Blueprint, abort, current_app, jsonify, request, session
-from flask_socketio import emit
 
 from .models import Panel, db, Game, Player, Comic
 from sqlalchemy import select
@@ -171,8 +170,6 @@ def submit_panel():
     if 'player_id' not in session:
         return 'Error: user is not a Player', 403
 
-    #db.session.commit()
-
     player = db.get_or_404(Player, session['player_id'])
 
     if player.assigned_comic_id is None:
@@ -181,7 +178,7 @@ def submit_panel():
 
     comic = db.get_or_404(Comic, player.assigned_comic_id)
     image_data = request.get_data()
-    
+
     panel = Panel(comic_id=comic.comic_id,
                   comic=comic,
                   image=image_data)
@@ -198,3 +195,31 @@ def submit_panel():
     current_app.logger.debug(f"Player={player.username} submitted panel for Comic={comic.comic_name}")
 
     return ''
+
+# /api/submit-prompt
+# POST endpoint called when a player finishes writing the
+# text prompts for each panel in their comic.
+#
+# Expected POST request body:
+#   JSON array of strings
+@main.route('/submit-prompts', methods=['POST'])
+def submit_prompt():
+    if 'player_id' not in session:
+        return 'Error: user is not a Player', 403
+
+    json = request.json
+    player = db.get_or_404(Player, session['player_id'])
+
+    if player.owned_comic is None:
+        current_app.logger.warning(f"Player={player.username} attempted prompt submission before game start")
+        return "Error: Prompts not expected at this time.", 400
+
+    player.owned_comic.comic_name = json['comicName']
+
+    for prompt in json['panel_prompts']:
+        player.owned_comic.panel_prompts.append(prompt)
+
+    db.session.commit()
+
+    return ''
+
