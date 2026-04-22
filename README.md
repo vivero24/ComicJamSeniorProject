@@ -13,8 +13,7 @@ to install the project the dependencies.
 ### Running
 After completing the setup, the webapp can be run with the command:
 
-Windows: ```npm run dev-windows```
-Linux: ```npm run dev```
+```npm run dev```
 
 ###
 
@@ -47,4 +46,5 @@ This will install and run the pipreqs utility, which generates a new requirement
 ### Running
 After completing the setup, the server can be run with the command:
 
-```npm run api```
+Linux/macOS: ```npm run api```
+Windows: ```npm run api-windows```
