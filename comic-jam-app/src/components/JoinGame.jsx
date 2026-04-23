@@ -45,6 +45,11 @@ export default function JoinGame({ onDataSend })
                     return;
                 }
 
+                if (response.status === 402) {
+                    setJoinError('That lobby is private.');
+                    return;
+                }
+
                 setJoinError('Could not join lobby. Please try again.');
             } catch (error) {
                 console.error(error);

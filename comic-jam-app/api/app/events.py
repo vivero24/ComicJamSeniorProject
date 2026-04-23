@@ -51,6 +51,7 @@ def connect_handler():
         current_app.logger.debug(f"Player={player.username} joined Game={game.invite_code} with SID={player.socket_id}")
 
     elif 'host_id' in session:
+        print(f"Testing={'host_id'}")
         game = db.get_or_404(Game, session['host_id'])
 
         current_app.logger.debug(f"Host connected to Game={game.invite_code} with SID={request.sid}") # # pyright: ignore[reportAttributeAccessIssue]
@@ -101,7 +102,8 @@ def broadcast_settings_update(game: Game):
     settings = {
         'inviteCode': game.invite_code,
         'timeLimit': game.time_limit_minutes,
-        'numRounds': game.rount_count,
+        'numRounds': game.round_count,
+        'lobbyAvailability': game.lobby_availability
     }
 
     emit('settings-update', settings, broadcast=True, namespace='/', to=game.invite_code)

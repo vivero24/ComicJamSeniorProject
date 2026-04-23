@@ -18,6 +18,7 @@ export default function CreateLobby({ onDataSend })
     const[players, setPlayers] = useState([]);
     const[numOfRounds, setNumOfRounds] = useState(4);
     const[timeLimit, setTimeLimit] = useState(5);
+    const[lobbyAvailability, setLobbyAvailability] = useState(true);
 
     useEffect(() => {
         const onReload = async () => {
@@ -73,7 +74,8 @@ export default function CreateLobby({ onDataSend })
             // settings are ironed out
             const lobbySettings = {
                 timeLimit: timeLimit,
-                numRounds: numOfRounds
+                numRounds: numOfRounds,
+                lobbyAvailability: lobbyAvailability,
             }
 
             await fetch('/api/change-lobby-settings', {
@@ -84,7 +86,7 @@ export default function CreateLobby({ onDataSend })
         };
 
         updateSettings();
-    }, [timeLimit, numOfRounds]);
+    }, [timeLimit, numOfRounds, lobbyAvailability]);
 
     const onStartGame = async () => {
 
@@ -113,6 +115,10 @@ export default function CreateLobby({ onDataSend })
 
     const kickPlayer = async (playerToKick) => {
         await fetch('/api/kick-player?player_id='+playerToKick)
+    }
+
+    const changeLobbyAvailability = async () => {
+        setLobbyAvailability(!lobbyAvailability);
     }
 
     return (
@@ -145,6 +151,12 @@ export default function CreateLobby({ onDataSend })
                                 value = {timeLimit}
                                 onChange={e => { setTimeLimit(restrictNumVal(e.target.value, e.target.min, e.target.max))}}>
                             </input> <br></br>
+                        </div>
+
+                        <div className = "inputRow">
+                            <label htmlFor = "canJoin">Lobby Availability</label>
+                            <button className="button-start" onClick={changeLobbyAvailability}>{lobbyAvailability ? "Lobby Open" : "Lobby Closed"}</button>
+                            <br></br>
                         </div>
                     </div>
 

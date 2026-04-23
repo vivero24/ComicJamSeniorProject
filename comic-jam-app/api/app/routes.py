@@ -44,6 +44,9 @@ def join_lobby():
     # Return 403: Forbidden if lobby is full
     if len(game.players) >= game.player_cap:
         return jsonify({'error': 'Lobby is full'}), 403
+    
+    if not game.lobby_availability:
+        return jsonify({'error': 'Lobby is set to private'}), 402
 
     # Register player in database
     username = json['userName']
@@ -91,8 +94,8 @@ def create_lobby():
             broadcast_settings_update(existing_game)
             return jsonify({'invite_code': existing_game.invite_code, 'already_exists': True})
         session.pop('host_id', None)
-    game = Game(invite_code=generate_game_code(), players=[])
 
+    game = Game(invite_code=generate_game_code(), players=[])
     db.session.add(game)
     db.session.commit()
 
@@ -139,7 +142,9 @@ def kick_player():
     found_player = db.get_or_404(Player, player_id)
     game = found_player.game
 
-    socketio.call('player-kicked', to=found_player.socket_id, timeout=10)
+    print(found_player.socket_id)
+
+    socketio.call('player-kicked', to=found_player.socket_id, timeout=5)
 
     db.session.delete(found_player)
     session.pop('player_id')
@@ -203,6 +208,7 @@ def change_lobby_settings():
     game = db.get_or_404(Game, session['host_id'])
     game.time_limit_minutes = request.json['timeLimit']
     game.rount_count = request.json['numRounds']
+    game.lobby_availability = request.json['lobbyAvailability']
     db.session.commit()
 
     current_app.logger.info(f"Game={game.invite_code}'s settings updated to time_limit={game.time_limit_minutes}")

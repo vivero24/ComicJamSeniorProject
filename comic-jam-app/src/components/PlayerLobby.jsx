@@ -9,6 +9,7 @@ export default function PlayerLobby()
     const [inviteCode, setInviteCode] = useState('');
     const [timeLimit, setTimeLimit] = useState(0);
     const [numRounds, setNumRounds] = useState(0);
+    const [lobbyAvailability, setLobbyAvailability] = useState();
 
     useEffect(() => {
         if (sessionStorage.getItem("leftLobby") === "true") {
@@ -27,6 +28,7 @@ export default function PlayerLobby()
             setInviteCode(json['inviteCode']);
             setTimeLimit(json['timeLimit']);
             setNumRounds(json['numRounds']);
+            setLobbyAvailability(json['lobbyAvailability'])
         };
 
         // Invoke anonymous "callback" function to acknowledge that the
@@ -104,6 +106,7 @@ export default function PlayerLobby()
                 <div className = "menuContainer">
                     <div>Rounds: {numRounds}</div>
                     <div>Time Limit: {timeLimit} minutes</div>
+                    <div>Lobby Availability: {lobbyAvailability ? "Lobby is open" : "Lobby is closed"}</div>
                 </div>
             </div>
 
@@ -111,9 +114,6 @@ export default function PlayerLobby()
                 <button onClick = {onPlayerLeave}>Leave Game</button>
             </div>
         </div>
-
         </>
-
-
     );  
 }
