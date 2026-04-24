@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "api": "cd api && .venv/bin/flask run --no-debugger"
+    "api-windows": "cd api && .venv\\Scripts\\flask run --no-debugger"
   },
   "dependencies": {
     "react": "^19.2.0",

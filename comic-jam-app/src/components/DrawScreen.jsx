@@ -5,7 +5,6 @@ export default function DrawScreen({onDrawingSubmit, ref})
 {
     const submitDrawing = async () =>{
         const imageData = p5Ref.current.getImageData();
-
         await onDrawingSubmit(imageData)
     }
 
