@@ -1,9 +1,10 @@
+from io import BytesIO
 import random
 import string
-import io
+import data_url
 import zipfile
 
-from flask import Blueprint, abort, jsonify, request, session, send_file, current_app
+from flask import Blueprint, abort, current_app, jsonify, request, send_file, session
 
 from .models import db, Game, Player, Comic, Panel
 from sqlalchemy import select
@@ -132,6 +133,19 @@ def leave_lobby():
 
     return ''
 
+# /api/change-lobby-settings
+# POST endpoint called when a host updates the settings of their lobby
+#
+# Updates the game's settings and broadcasts a 'settings-update' to all
+# players in the lobby
+#
+# Expected POST request body:
+#   JSON:
+#   {
+#       "timeLimit": Integer,
+#       "numRounds": Integer
+#       # NOTE: Other fields TBD
+#   }
 @main.route('/change-lobby-settings', methods=['POST'])
 def change_lobby_settings():
     if 'host_id' not in session:
@@ -148,8 +162,47 @@ def change_lobby_settings():
 
     return ''
 
+# /api/submit-panel
+# POST endpoint called when a player submits the panel they were assigned
+# during a round.
+#
+# Expected POST request body:
+#   dataURL representing a PNG
+@main.route('/submit-panel', methods=['POST'])
+def submit_panel():
+    if 'player_id' not in session:
+        return 'Error: user is not a Player', 403
 
-#Use the GET endpoint to return the list of comic folders
+    #db.session.commit()
+
+    player = db.get_or_404(Player, session['player_id'])
+
+    if player.assigned_comic_id is None:
+        current_app.logger.warning(f"Player={player.username} attempted submission without an active assignment")
+        return "Error: Player does not have a comic assigned.", 400
+
+    comic = db.get_or_404(Comic, player.assigned_comic_id)
+    image_data = request.get_data()
+
+    panel = Panel(comic_id=comic.comic_id,
+                  comic=comic,
+                  image=image_data)
+
+    
+
+    db.session.add(panel)
+
+    # Clear assignment to indicate player submitted
+    player.assigned_comic_id = None
+    player.game.num_players_unsubmitted -= 1
+    db.session.commit()
+
+    broadcast_player_submission_update(player.game)
+
+    current_app.logger.debug(f"Player={player.username} submitted panel for Comic={comic.comic_name}")
+
+    return ''
+
 @main.route('/list-comics', methods=['GET'])
 def list_comics():
     game: Game
@@ -178,7 +231,6 @@ def list_comics():
     print(comics)
     return jsonify(comics)
 
-# GET endpoint that downloads a comic as a ZIP file
 @main.route('/download-comic', methods=['GET'])
 def download_comic():
     if 'player_id' not in session or 'host_id' not in session:
@@ -204,43 +256,4 @@ def download_comic():
                          URL_data)
     comic_archive.seek(0)
     return send_file(comic_archive, mimetype='application/zip')
-    return ''
-
-# /api/submit-panel
-# POST endpoint called when a player submits the panel they were assigned
-# during a round.
-#
-# Expected POST request body:
-#   dataURL representing a PNG
-@main.route('/submit-panel', methods=['POST'])
-def submit_panel():
-    if 'player_id' not in session:
-        return 'Error: user is not a Player', 403
-
-    #db.session.commit()
-
-    player = db.get_or_404(Player, session['player_id'])
-
-    if player.assigned_comic_id is None:
-        current_app.logger.warning(f"Player={player.username} attempted submission without an active assignment")
-        return "Error: Player does not have a comic assigned.", 400
-
-    comic = db.get_or_404(Comic, player.assigned_comic_id)
-    image_data = request.get_data()
-    
-    panel = Panel(comic_id=comic.comic_id,
-                  comic=comic,
-                  image=image_data)
-
-    db.session.add(panel)
-
-    # Clear assignment to indicate player submitted
-    player.assigned_comic_id = None
-    player.game.num_players_unsubmitted -= 1
-    db.session.commit()
-
-    broadcast_player_submission_update(player.game)
-
-    current_app.logger.debug(f"Player={player.username} submitted panel for Comic={comic.comic_name}")
-
     return ''
