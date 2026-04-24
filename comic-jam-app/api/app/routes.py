@@ -152,86 +152,59 @@ def change_lobby_settings():
 #Use the GET endpoint to return the list of comic folders
 @main.route('/list-comics', methods=['GET'])
 def list_comics():
-   # Prefer player session, but allow host for showcase
-   player_id = session.get('player_id')
-   host_id = session.get('host_id')
+    game: Game
+    if 'host_id' in session:
+        game = db.get_or_404(Game, session['host_id'])
+    elif 'player_id' in session:
+        game = db.get_or_404(Player, session['player_id']).game
+    else:
+        abort(403)
 
-   if not player_id and not host_id:
-       abort(403)
+    comics = []
+    for player in game.players:
+        curr_comic = player.owned_comic
 
-   if player_id:
-       # Player is requesting
-       player = db.get_or_404(Player, player_id)
-       game = player.game
-       if not game:
-           return jsonify({"comics": []})
-   else:
-       # host is requesting (showcase)
-       game = db.session.execute(
-           select(Game).where(Game.host_id == host_id)
-       ).scalar_one_or_none()
-       if game is None:
-           abort(404)
+        if curr_comic is None:
+            continue
 
-   comics = []
-   for p in game.players:
-       if p.comic:
-           comics.append({
-               "comicId": p.comic.comic_id,
-               "name": p.comic.comic_name
-           })
+        comic_json = {
+            'comicID': curr_comic.comic_id,
+            'comicName': curr_comic.comic_name,
+            'creator': curr_comic.owner.username
+        }
 
-   return jsonify({"comics": comics})
+        comics.append(comic_json)
+    
+    print(comics)
+    return jsonify(comics)
 
 # GET endpoint that downloads a comic as a ZIP file
 @main.route('/download-comic', methods=['GET'])
-def download_comic(game_id, comic_id):
-    # Authorization via session
-    player_id = session.get('player_id')
-    host_id = session.get('host_id')
-
-    if not player_id and not host_id:
+def download_comic():
+    if 'player_id' not in session or 'host_id' not in session:
         abort(403)
 
-    # GET /download-comic?comicId=<id>
-    comic_id = request.args.get('comicId', type=int)
-    if not comic_id:
-        return {"error": "comicId required"}, 400
+    comic_id = request.args.get('comicID')
 
-    if player_id:
-        player = db.get_or_404(Player, player_id)
-        game = player.game
-        if not game:
-            return {"error": "Player is not in a game"}, 400
-    else:
-        game = db.session.execute(
-            select(Game).where(Game.host_id == host_id)
-        ).scalar_one_or_none()
-        if game is None:
-            return {"error": "Game not found"}, 404
-    # Fetch the comic
     comic = db.get_or_404(Comic, comic_id)
 
-    # Ensure the comic belongs to an owner in the same game
-    if not comic.owner or comic.owner.game_id != game.host_id:
-        return {"error": "Comic does not belong to this game"}, 403
+    comic_archive = BytesIO()
+    with zipfile.ZipFile(comic_archive, 'w') as zip:
+        for idx, panel in enumerate(comic.completed_panels):
+            image_URL_raw = data_url.DataURL.from_url(panel.image.decode())
 
-    # Create ZIP in memory
-    memory_file = io.BytesIO()
-    with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
-       for idx, panel in enumerate(comic.completed_panels):
-           filename = f"panel_{idx + 1}.png"
-           zipf.writestr(filename, panel.image)
+            if image_URL_raw is None:
+                error_str = f"Failed to create data URL for panel={panel.panel_id} in comic={comic_id}"
 
-    memory_file.seek(0)
+                current_app.logger.error(error_str)
+                return error_str, 500
 
-    return send_file(
-       memory_file,
-       mimetype='application/zip',
-       as_attachment=True,
-       download_name=f"{comic.comic_name}.zip"
-    )
-
+            URL_data = image_URL_raw.data
+            zip.writestr(f"{comic.comic_name}-{idx+1}.png",
+                         URL_data)
+    comic_archive.seek(0)
+    return send_file(comic_archive, mimetype='application/zip')
+    return ''
 
 # /api/submit-panel
 # POST endpoint called when a player submits the panel they were assigned
