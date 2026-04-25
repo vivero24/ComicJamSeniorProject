@@ -36,10 +36,6 @@ def begin_game_loop():
 @socketio.on('connect')
 def connect_handler():
 
-    if 'player_id' not in session and 'host_id' not in session:
-        current_app.logger.warning("Anonymous socket connection ignored")
-        return
-
     game: Game
 
     if 'player_id' in session:
