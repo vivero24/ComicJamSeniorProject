@@ -2,7 +2,7 @@ import random
 import string
 
 from flask import Blueprint, abort, current_app, jsonify, request, session
-from flask_socketio import emit
+from flask_socketio import emit, join_room
 
 from .models import Panel, db, Game, Player, Comic
 from sqlalchemy import select
@@ -198,3 +198,101 @@ def submit_panel():
     current_app.logger.debug(f"Player={player.username} submitted panel for Comic={comic.comic_name}")
 
     return ''
+
+
+def get_host_room(game):
+    return f"host_{game.host_id}"
+
+@main.route('/start-showcase', methods=['POST'])
+def start_showcase():
+    if 'host_id' not in session:
+        return "Error: Only host can start showcase", 403
+    
+    game = db.get_or_404(Game, session['host_id'])
+
+    comics = db.session.scalars(
+        select(Comic).where(Comic.game_id == game.host_id)
+    ).all()
+
+    if not comics:
+        return jsonify({"error": "No comics exist"}), 400
+    
+    comics_sorted = sorted(comics, key=lambda c: c.comic_id)
+
+    session['showcase_comics'] = [c.comic_id for c in comics_sorted]
+
+    emit(
+        "showcase-start",
+        {"message": "Showcase beginning"},
+        room=get_host_room(game),
+        namespace="/"
+    )
+
+    run_showcase_slideshow(game, comics_sorted)
+
+    return jsonify({"status": "Showcase started"})
+
+def get_showcase_comics():
+    if 'host_id' not in session:
+        return "Error: Only host can view showcase", 403
+    
+    game = db.get_or_404(Game, session['host_id'])
+
+    comics = db.session.scalars(
+        select(Comic).where(Comic.game_id == game.host_id)
+    ).all()
+
+    comics_sorted = sorted(comics, key=lambda c: c.comic_id)
+
+    # Return metadata only — panels are streamed separately
+    return jsonify({
+        "comics": [
+            {
+                "comicId": c.comic_id,
+                "name": c.comic_name,
+                "panelCount": len(c.panels)
+            }
+            for c in comics_sorted
+        ]
+    })
+
+
+# Slideshow engine — emits one comic at a time to the host
+def run_showcase_slideshow(game, comics):
+    host_room = get_host_room(game)
+
+    for comic in comics:
+        # Convert panel binary to base64 strings
+        panels = []
+        for p in comic.panels:
+            panels.append(p.image.decode('latin1'))  # or base64 if preferred
+
+        emit(
+            "showcase-comic",
+            {
+                "comicId": comic.comic_id,
+                "name": comic.comic_name,
+                "panels": panels
+            },
+            room=host_room,
+            namespace="/"
+        )
+
+        # Wait before sending next comic
+        socketio.sleep(4)  # 4 seconds per comic (adjust as needed)
+
+    # Notify host that slideshow is finished
+    emit(
+        "showcase-end",
+        {"message": "Showcase complete"},
+        room=host_room,
+        namespace="/"
+    )
+
+
+# SOCKET.IO: When host connects, join them to host-only room
+@socketio.on("connect")
+def handle_connect():
+    if 'host_id' in session:
+        room = get_host_room(db.get_or_404(Game, session['host_id']))
+        join_room(room)
