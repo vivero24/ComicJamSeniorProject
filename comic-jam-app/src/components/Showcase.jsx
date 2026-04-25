@@ -1,5 +1,26 @@
+import { useState } from 'react';
+
 export default function Showcase({ onDataSend })
 {
+    const[comicIndex, setComicIndex] = useState(1)
+    const[comics, setComics] = useState([
+        {
+            panels: [
+                 'https://placehold.co/500x500',
+                 'https://placehold.co/500x500',
+                 'https://placehold.co/500x500'
+            ]
+        },
+        {
+            panels:[
+                'https://placehold.co/500x500',
+                'https://placehold.co/500x500',
+                'https://placehold.co/500x500'
+            ]
+        }
+    ]);
+    
+
     return (
         <>
             <h1>
@@ -24,7 +45,10 @@ export default function Showcase({ onDataSend })
             </div>
             <div className="menuContainer">
                 <div className="menuContainer">
-                    Display Comic Here
+
+                   {comics[comicIndex].panels.map((panel, index) => (
+                    <img key = {index} src = {panel} />
+                   ))}
                 </div>
 
                 <button>Previous</button>
