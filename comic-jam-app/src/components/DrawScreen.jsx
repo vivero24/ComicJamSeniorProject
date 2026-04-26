@@ -5,6 +5,10 @@ export default function DrawScreen({onDrawingSubmit, ref, prompt, title})
 {
     const submitDrawing = async () =>{
         const imageData = p5Ref.current.getImageData();
+
+        // Explicity clear canvas upon submitting
+
+        p5Ref.current.clearCanvas();
         await onDrawingSubmit(imageData)
     }
 

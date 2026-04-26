@@ -25,7 +25,7 @@ export default function PlayerLobby()
         // Invoke anonymous "callback" function to acknowledge that the
         // event was handled
         const acknowledgeGameStart = (callback) => {
-            callback()
+            callback();
             navigate('/PlayerGame');
         };
 

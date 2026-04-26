@@ -1,6 +1,6 @@
 from typing import List, Optional
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import ARRAY, JSON, ForeignKey, LargeBinary, String
+from sqlalchemy import ForeignKey, LargeBinary
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, relationship
 
 class Base(MappedAsDataclass, DeclarativeBase):
@@ -66,4 +66,4 @@ class Panel(db.Model, MappedAsDataclass):
     comic: Mapped['Comic'] = relationship(back_populates='panels')
 
     prompt: Mapped[str]
-    image: Mapped[Optional[bytes]] = mapped_column(LargeBinary, default=None)
+    image: Mapped[bytes] = mapped_column(LargeBinary, default=None)

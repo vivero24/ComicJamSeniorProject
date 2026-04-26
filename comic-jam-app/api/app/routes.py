@@ -1,9 +1,12 @@
+from io import BytesIO
 import random
 import string
+import data_url
+import zipfile
 
-from flask import Blueprint, abort, current_app, jsonify, request, session
+from flask import Blueprint, abort, current_app, jsonify, request, send_file, session
 
-from .models import Panel, db, Game, Player, Comic
+from .models import db, Game, Player, Comic, Panel
 from sqlalchemy import select
 
 from .events import broadcast_lobby_update, broadcast_player_submission_update, broadcast_settings_update
@@ -195,15 +198,12 @@ def submit_panel():
     comic = db.get_or_404(Comic, player.assigned_comic_id)
     image_data = request.get_data()
 
-    # Move panel creation to submit prompt
-    # just edit image here
-    
-    # TODO: Throwing error here, move panel creation to
-    # game manager
     panel = Panel(comic_id=comic.comic_id,
                   comic=comic,
                   prompt='',
                   image=image_data)
+
+    
 
     db.session.add(panel)
 
@@ -246,7 +246,60 @@ def submit_prompt():
 
     player.game.num_players_unsubmitted -= 1
     db.session.commit()
-
     broadcast_player_submission_update(player.game)
-    
+
     return ''
+
+@main.route('/list-comics', methods=['GET'])
+def list_comics():
+    game: Game
+    if 'host_id' in session:
+        game = db.get_or_404(Game, session['host_id'])
+    elif 'player_id' in session:
+        game = db.get_or_404(Player, session['player_id']).game
+    else:
+        abort(403)
+
+    comics = []
+    for player in game.players:
+        curr_comic = player.owned_comic
+
+        if curr_comic is None:
+            continue
+
+        comic_json = {
+            'comicID': curr_comic.comic_id,
+            'comicName': curr_comic.comic_name,
+            'creator': curr_comic.owner.username
+        }
+
+        comics.append(comic_json)
+    
+    print(comics)
+    return jsonify(comics)
+
+@main.route('/download-comic', methods=['GET'])
+def download_comic():
+    if 'player_id' not in session or 'host_id' not in session:
+        abort(403)
+
+    comic_id = request.args.get('comicID')
+
+    comic = db.get_or_404(Comic, comic_id)
+
+    comic_archive = BytesIO()
+    with zipfile.ZipFile(comic_archive, 'w') as zip:
+        for idx, panel in enumerate(comic.panels):
+            image_URL_raw = data_url.DataURL.from_url(panel.image.decode())
+
+            if image_URL_raw is None:
+                error_str = f"Failed to create data URL for panel={panel.panel_id} in comic={comic_id}"
+
+                current_app.logger.error(error_str)
+                return error_str, 500
+
+            URL_data = image_URL_raw.data
+            zip.writestr(f"{comic.comic_name}-{idx+1}.png",
+                         URL_data)
+    comic_archive.seek(0)
+    return send_file(comic_archive, mimetype='application/zip')
