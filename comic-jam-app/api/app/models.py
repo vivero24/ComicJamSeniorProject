@@ -33,8 +33,7 @@ class Player(db.Model, MappedAsDataclass):
 
     owned_comic: Mapped[Optional['Comic']] = relationship(back_populates='owner')
 
-    assigned_comic_id: Mapped[Optional[int]]
-    assigned_prompt: Mapped[Optional[str]]
+    assigned_panel_id: Mapped[Optional[int]]
     # Unused until the sketch phase is implemented.
     # It might also be worth combining these into a tuple
     # or dictionary to reduce the book keeping required.
@@ -66,4 +65,4 @@ class Panel(db.Model, MappedAsDataclass):
     comic: Mapped['Comic'] = relationship(back_populates='panels')
 
     prompt: Mapped[str]
-    image: Mapped[bytes] = mapped_column(LargeBinary, default=None)
+    image: Mapped[Optional[bytes]] = mapped_column(LargeBinary, default=None)

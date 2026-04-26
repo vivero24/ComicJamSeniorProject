@@ -28,9 +28,9 @@ def broadcast_game_event(event: Game_Event, game: Game, data: Optional[dict]=Non
                 if data is None:
                     data = {}
 
-                comic_title = db.get_or_404(Comic, player.assigned_comic_id).comic_name
-                data['assignedTitle'] = comic_title
-                data['assignedPrompt'] = player.assigned_prompt
+                panel = db.get_or_404(Panel, player.assigned_panel_id)
+                data['assignedTitle'] = panel.comic.comic_name
+                data['assignedPrompt'] = panel.prompt
 
             socketio.call(event, data, to=player.socket_id, timeout=10)
         except TimeoutError:
@@ -68,8 +68,8 @@ def assign_comics(game: Game, current_round: int):
     # Might be hiding a race condition, further testing needed.
     db.session.commit()
 
-    # Drawing begins at round 2
-    drawing_round = current_round - 2
+    # Drawing begins at round 1
+    drawing_round = current_round - 1
     num_players = len(game.players)
     for index, player in enumerate(game.players):
         
@@ -81,14 +81,11 @@ def assign_comics(game: Game, current_round: int):
 
         comic_index = ((index + drawing_round + 1) + offset) % num_players
 
-        player.assigned_comic_id = comics[comic_index].comic_id
-        player.assigned_prompt = comics[comic_index].panels[drawing_round].prompt
+        player.assigned_panel_id = comics[comic_index].panels[drawing_round].panel_id
 
         db.session.commit()
 
-        # new assignment event
-
-        current_app.logger.debug(f"Player={player.username}, id={player.player_id} assigned comic_id={player.assigned_comic_id}")
+        current_app.logger.debug(f"Player={player.username}, id={player.player_id} assigned panel={player.assigned_panel_id}")
 
  
 def manage_game_loop(game_id: int, app: Flask):
@@ -99,9 +96,7 @@ def manage_game_loop(game_id: int, app: Flask):
     # "Parent instance not bound to session" errors pop up.
     game = db.get_or_404(Game, game_id)
 
-    num_players = len(game.players)
     # Initialize comics for all players
-    # TODO: TEST
     for player in game.players:
         comic = Comic(comic_name='unnamed',
                       owner_id=player.player_id,
@@ -110,14 +105,16 @@ def manage_game_loop(game_id: int, app: Flask):
 
         db.session.add(comic)
 
+        # NOTE: In the future, initialize the image with a placeholder
+        # "image not found"
         for _ in range(game.round_count):
-            comic.panels.append(Panel(comic_id=comic.comic_id,
-                              comic=comic,
-                              prompt = ''))
+            panel = Panel(comic_id=comic.comic_id,
+                          comic=comic,
+                          prompt = 'no prompt')
 
-        db.session.commit()
+            db.session.add(panel)
 
-    db.session.commit()
+            db.session.commit()
 
     # Let all players know game has started
     broadcast_game_event(Game_Event.GAME_START, game)
@@ -126,7 +123,9 @@ def manage_game_loop(game_id: int, app: Flask):
     # the server gives the all clear, but that might achieved by broadcasting round-start
     socketio.emit('all-players-ready', to=game.invite_code)
 
-    current_round = 1
+    # Starting at round 0 so account for prompting phase,
+    # drawing takes place during all rounds after
+    current_round = 0
     while current_round <= game.round_count:
         game_state = {
             'currentRound': current_round,

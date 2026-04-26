@@ -53,8 +53,7 @@ def join_lobby():
                     game_id=game.host_id,
                     game=game,
                     owned_comic=None,
-                    assigned_comic_id=None,
-                    assigned_prompt=None)
+                    assigned_panel_id=None)
 
     db.session.add(player)
     db.session.commit()
@@ -191,30 +190,23 @@ def submit_panel():
 
     player = db.get_or_404(Player, session['player_id'])
 
-    if player.assigned_comic_id is None:
+    if player.assigned_panel_id is None:
         current_app.logger.warning(f"Player={player.username} attempted submission without an active assignment")
-        return "Error: Player does not have a comic assigned.", 400
+        return "Error: Player does not have a panel assigned.", 400
 
-    comic = db.get_or_404(Comic, player.assigned_comic_id)
+    panel = db.get_or_404(Panel, player.assigned_panel_id)
     image_data = request.get_data()
 
-    panel = Panel(comic_id=comic.comic_id,
-                  comic=comic,
-                  prompt='',
-                  image=image_data)
-
-    
-
-    db.session.add(panel)
+    panel.image = image_data
 
     # Clear assignment to indicate player submitted
-    player.assigned_comic_id = None
+    player.assigned_panel_id = None
     player.game.num_players_unsubmitted -= 1
     db.session.commit()
 
     broadcast_player_submission_update(player.game)
 
-    current_app.logger.debug(f"Player={player.username} submitted panel for Comic={comic.comic_name}")
+    current_app.logger.debug(f"Player={player.username} submitted panel={panel.panel_id} for Comic={panel.comic.comic_name}")
 
     return ''
 
@@ -274,8 +266,7 @@ def list_comics():
         }
 
         comics.append(comic_json)
-    
-    print(comics)
+
     return jsonify(comics)
 
 @main.route('/download-comic', methods=['GET'])
@@ -290,6 +281,11 @@ def download_comic():
     comic_archive = BytesIO()
     with zipfile.ZipFile(comic_archive, 'w') as zip:
         for idx, panel in enumerate(comic.panels):
+            if panel.image is None:
+                error_str = f"ZIP archive could not be created -- unable to retrieve panel={idx} of comic={panel.comic.comic_name}"
+                current_app.logger.error(error_str)
+                return error_str, 500
+
             image_URL_raw = data_url.DataURL.from_url(panel.image.decode())
 
             if image_URL_raw is None:

@@ -155,11 +155,13 @@ export default function PlayerGame({numRounds, timeLimit})
         }
 
         const handleRoundEnd = async (callback) => {
-            if(currRound === 1 && promptSubmitted != true) {
+            // NOTE: Prompting phase has been moved to round 0 instead of 1
+            // so that all panels will be drawn for
+            if(currRound === 0 && promptSubmitted != true) {
                 console.log("Prompt autosubmitted")
                 await promptRef.current.submitPrompt();
             }
-            else if (currRound != 1 && isSubmitted != true) {
+            else if (currRound != 0 && isSubmitted != true) {
                 await drawScreenRef.current.submitDrawing();
             }
 
@@ -209,7 +211,7 @@ export default function PlayerGame({numRounds, timeLimit})
             </div>
 
             {
-                currRound === 1
+                currRound === 0
                     ? promptSubmitted
                         ? <WaitingOverlay/>
                         : <PlanningPhase onPromptSubmitted = {onPromptSubmitted} 
