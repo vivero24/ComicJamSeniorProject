@@ -172,6 +172,7 @@ input
 {
     color: rgb(51,102,204);
     text-decoration: underline;
+    cursor: pointer;
 }
 
 .inline-flex-parent
