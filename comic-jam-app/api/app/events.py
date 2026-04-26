@@ -96,7 +96,7 @@ def broadcast_settings_update(game: Game):
     settings = {
         'inviteCode': game.invite_code,
         'timeLimit': game.time_limit_minutes,
-        'numRounds': game.rount_count,
+        'numRounds': game.round_count,
     }
 
     emit('settings-update', settings, broadcast=True, namespace='/', to=game.invite_code)

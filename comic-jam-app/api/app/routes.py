@@ -161,7 +161,7 @@ def change_lobby_settings():
 
     if request.method == 'POST':
         game.time_limit_minutes = request.json['timeLimit']
-        game.rount_count = request.json['numRounds']
+        game.round_count = request.json['numRounds']
         db.session.commit()
 
         current_app.logger.info(f"Game={game.invite_code}'s settings updated to time_limit={game.time_limit_minutes}")
@@ -172,7 +172,7 @@ def change_lobby_settings():
         return jsonify({
         'inviteCode': game.invite_code,
         'timeLimit': game.time_limit_minutes,
-        'numRounds': game.rount_count,
+        'numRounds': game.round_count,
         })
 
 # /api/submit-panel
@@ -202,6 +202,7 @@ def submit_panel():
     # game manager
     panel = Panel(comic_id=comic.comic_id,
                   comic=comic,
+                  prompt='',
                   image=image_data)
 
     db.session.add(panel)
@@ -235,11 +236,17 @@ def submit_prompt():
         current_app.logger.warning(f"Player={player.username} attempted prompt submission before game start")
         return "Error: Prompts not expected at this time.", 400
 
-    player.owned_comic.comic_name = json['comicName']
+    player.owned_comic.comic_name = json['comicTitle']
 
-    for prompt in json['panel_prompts']:
-        player.owned_comic.panel_prompts.append(prompt)
+    recieved_prompts = json['prompts']
+    for index in range(player.game.round_count):
+        panel = player.owned_comic.panels[index]
+        panel.prompt = recieved_prompts[index]
+        current_app.logger.debug(f"Assigned prompt=\"{recieved_prompts[index]}\" to panel={index} of comic={player.owned_comic.comic_name}")
 
+    player.game.num_players_unsubmitted -= 1
     db.session.commit()
 
+    broadcast_player_submission_update(player.game)
+    
     return ''

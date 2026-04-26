@@ -1,5 +1,5 @@
 import DrawScreen from './DrawScreen';
-import {useState, useEffect, useRef, useLayoutEffect} from 'react';
+import {useState, useEffect, useRef, useLayoutEffect, useImperativeHandle} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { socket } from '../socket.js'
 
@@ -38,6 +38,11 @@ function PlanningPhase({onPromptSubmitted, promptRef, numPanels})
         // collect input from all prompts
         await onPromptSubmitted(comicTitle, prompts);
     }
+
+    useImperativeHandle(promptRef, () =>({
+        submitPrompt: submitPrompt
+        }
+    ));
 
     return(
         <>
@@ -134,6 +139,9 @@ export default function PlayerGame({numRounds, timeLimit})
             setIsSubmitted(false);
             setPromptSubmitted(false);
 
+            setAssignedComicTitle(json['assignedTitle'])
+            setAssignedPanelPrompt(json['assignedPrompt'])
+
             callback();
         }
 
@@ -149,7 +157,7 @@ export default function PlayerGame({numRounds, timeLimit})
         const handleRoundEnd = async (callback) => {
             if(currRound === 1 && promptSubmitted != true) {
                 console.log("Prompt autosubmitted")
-                await onPromptSubmitted(promptRef.current);
+                await promptRef.current.submitPrompt();
             }
             else if (currRound != 1 && isSubmitted != true) {
                 await drawScreenRef.current.submitDrawing();
@@ -213,8 +221,8 @@ export default function PlayerGame({numRounds, timeLimit})
                         <>
                             <DrawScreen ref = {drawScreenRef}
                                 onDrawingSubmit={onDrawingSubmit}
-                                prompt={currRound}
-                                title={timeRemaining}/>
+                                prompt={assignedPanelPrompt}
+                                title={assignedComicTitle}/>
                             <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button>
                         </>
             }

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 import time
 
 from flask import Flask, current_app
@@ -7,7 +7,7 @@ from socketio.exceptions import TimeoutError
 from app.events import broadcast_player_submission_update
 
 from . import socketio
-from .models import db, Game, Comic
+from .models import Panel, Player, db, Game, Comic
 
 from enum import StrEnum
 class Game_Event(StrEnum):
@@ -18,10 +18,20 @@ class Game_Event(StrEnum):
 
 # Broadcasts the specified event to all players in a game's lobby and
 # waits for each player to acknowledge the event before returning.
-def broadcast_game_event(event: Game_Event, game: Game, data=None):
+def broadcast_game_event(event: Game_Event, game: Game, data: Optional[dict]=None):
     for player in game.players:
         try:
             current_app.logger.debug(f"Pinging Player={player.username} in Game={game.invite_code} to acknowledge event={event}.")
+
+            if event == Game_Event.ROUND_START:
+
+                if data is None:
+                    data = {}
+
+                comic_title = db.get_or_404(Comic, player.assigned_comic_id).comic_name
+                data['assignedTitle'] = comic_title
+                data['assignedPrompt'] = player.assigned_prompt
+
             socketio.call(event, data, to=player.socket_id, timeout=10)
         except TimeoutError:
             current_app.logger.warning(f"Player={player.username} in game={game.invite_code} did not acknowledge event={event}.")
@@ -46,25 +56,11 @@ def assign_comics(game: Game, current_round: int):
     #   Set assigned_prompt using current_round-2 mentioned above
     
     # collect comic IDs
-    comic_IDs: List[int] = []
+    comics: List[Comic] = []
     for player in game.players:
         if player.owned_comic is not None:
-            comic_IDs.append(player.owned_comic.comic_id)
+            comics.append(player.owned_comic)
 
-    num_players = len(game.players)
-
-    #for index, player in enumerate(game.players):
-        
-
-
-
-    '''
-    comic_IDs: List[int] = []
-    for player in game.players:
-        if player.owned_comic is not None:
-            comic_IDs.append(player.owned_comic.comic_id)
-
-    num_players = len(game.players)
 
     # Commit first to fix bug where assigned_comic_id would
     # become None after the later commit. It might have to do
@@ -72,19 +68,29 @@ def assign_comics(game: Game, current_round: int):
     # Might be hiding a race condition, further testing needed.
     db.session.commit()
 
+    # Drawing begins at round 2
+    drawing_round = current_round - 2
+    num_players = len(game.players)
     for index, player in enumerate(game.players):
-        comic_index = (index - (current_round - 1)) % num_players
+        
+        # debug code
+        if num_players == 1:
+            offset = 0
+        else:
+            offset = int((drawing_round) / (num_players - 1))
 
-        player.assigned_comic_id = comic_IDs[comic_index]
+        comic_index = ((index + drawing_round + 1) + offset) % num_players
 
-        target_comic = db.get_or_404(Comic, player.assigned_comic_id)
-        player.assigned_prompt = target_comic.panel_prompts[current_round - 2]
+        player.assigned_comic_id = comics[comic_index].comic_id
+        player.assigned_prompt = comics[comic_index].panels[drawing_round].prompt
+
+        db.session.commit()
+
+        # new assignment event
 
         current_app.logger.debug(f"Player={player.username}, id={player.player_id} assigned comic_id={player.assigned_comic_id}")
 
-    db.session.commit()
-    '''
-
+ 
 def manage_game_loop(game_id: int, app: Flask):
     app.app_context().push()
 
@@ -93,20 +99,26 @@ def manage_game_loop(game_id: int, app: Flask):
     # "Parent instance not bound to session" errors pop up.
     game = db.get_or_404(Game, game_id)
 
-    
-    # Create comics for all players
+    num_players = len(game.players)
+    # Initialize comics for all players
+    # TODO: TEST
     for player in game.players:
-        # TODO: Allow users to specify their comic's name
         comic = Comic(comic_name='unnamed',
                       owner_id=player.player_id,
                       owner=player,
-                      completed_panels=[],
-                      panel_prompts=[])
+                      panels=[])
 
         db.session.add(comic)
 
+        for _ in range(game.round_count):
+            comic.panels.append(Panel(comic_id=comic.comic_id,
+                              comic=comic,
+                              prompt = ''))
+
+        db.session.commit()
+
     db.session.commit()
-    
+
     # Let all players know game has started
     broadcast_game_event(Game_Event.GAME_START, game)
 
@@ -115,10 +127,10 @@ def manage_game_loop(game_id: int, app: Flask):
     socketio.emit('all-players-ready', to=game.invite_code)
 
     current_round = 1
-    while current_round <= game.rount_count:
+    while current_round <= game.round_count:
         game_state = {
             'currentRound': current_round,
-            'totalRounds': game.rount_count,
+            'totalRounds': game.round_count,
             'timeLimit': game.time_limit_minutes,
         }
 
@@ -133,7 +145,7 @@ def manage_game_loop(game_id: int, app: Flask):
         # Let players know a new round has started
         broadcast_game_event(Game_Event.ROUND_START, game, game_state)
 
-        current_app.logger.debug(f"Game={game.invite_code} started round {current_round} of {game.rount_count}.")
+        current_app.logger.debug(f"Game={game.invite_code} started round {current_round} of {game.round_count}.")
 
         # TODO:
         # - Currently using seconds for debugging, but it should be changed
@@ -147,11 +159,11 @@ def manage_game_loop(game_id: int, app: Flask):
 
             time.sleep(.5)
 
-        if current_round == game.rount_count:
+        if current_round == game.round_count:
             broadcast_game_event(Game_Event.GAME_END, game)
             current_app.logger.debug(f"Game={game.invite_code} concluded.")
         else:
             broadcast_game_event(Game_Event.ROUND_END, game)
-            current_app.logger.debug(f"Game={game.invite_code} ended round {current_round} of {game.rount_count}.")
+            current_app.logger.debug(f"Game={game.invite_code} ended round {current_round} of {game.round_count}.")
 
         current_round += 1

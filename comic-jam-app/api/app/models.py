@@ -18,7 +18,7 @@ class Game(db.Model, MappedAsDataclass):
 
     num_players_unsubmitted: Mapped[int] = mapped_column(default=0)
     player_cap: Mapped[int] = mapped_column(default=4)
-    rount_count: Mapped[int] = mapped_column(default=4)
+    round_count: Mapped[int] = mapped_column(default=4)
     time_limit_minutes: Mapped[int] = mapped_column(default=10)
 
 
@@ -52,7 +52,7 @@ class Comic(db.Model, MappedAsDataclass):
 
     owner_id: Mapped[int] = mapped_column(ForeignKey('player.player_id'))
     owner: Mapped['Player'] = relationship(back_populates='owned_comic')
-    completed_panels: Mapped[List['Panel']] = relationship(back_populates='comic')
+    panels: Mapped[List['Panel']] = relationship(back_populates='comic')
     #panel_prompts: Mapped[List[str]] = mapped_column(JSON)
     # sketch_panels --- unimplemented for now
     comic_name: Mapped[str] = mapped_column(default='unnamed')
@@ -63,7 +63,7 @@ class Panel(db.Model, MappedAsDataclass):
     panel_id:  Mapped[int] = mapped_column(primary_key=True, autoincrement=True, init=False)
 
     comic_id: Mapped[int] = mapped_column(ForeignKey('comic.comic_id'))
-    comic: Mapped['Comic'] = relationship(back_populates='completed_panels')
+    comic: Mapped['Comic'] = relationship(back_populates='panels')
 
     prompt: Mapped[str]
     image: Mapped[Optional[bytes]] = mapped_column(LargeBinary, default=None)
