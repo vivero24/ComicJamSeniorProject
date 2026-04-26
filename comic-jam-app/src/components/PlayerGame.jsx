@@ -1,5 +1,5 @@
 import DrawScreen from './DrawScreen';
-import {useState, useEffect, useRef} from 'react';
+import {useState, useEffect, useRef, useLayoutEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { socket } from '../socket.js'
 
@@ -36,8 +36,7 @@ function PlanningPhase({onPromptSubmitted, promptRef, numPanels})
 
     const submitPrompt = async() => {
         // collect input from all prompts
-        console.log(prompts)
-        await onPromptSubmitted(prompt);
+        await onPromptSubmitted(comicTitle, prompts);
     }
 
     return(
@@ -60,18 +59,21 @@ function PlanningPhase({onPromptSubmitted, promptRef, numPanels})
     )
 }
 
-export default function PlayerGame()
+export default function PlayerGame({numRounds, timeLimit})
 {
     const drawScreenRef = useRef();
     const promptRef = useRef();
     const navigate = useNavigate();
 
-    const[currRound, setCurrRound] = useState(1);
-    const[totalRounds, setTotalRounds] = useState(0);
+    const[currRound, setCurrRound] = useState(null);
+    const[totalRounds, setTotalRounds] = useState(null);
     const[timeRemaining, setTimeRemaining] = useState(60);
     const[isSubmitted, setIsSubmitted] = useState(false);
     const[numPlayersRemaining, setNumPlayersRemaining] = useState(0)
     const[promptSubmitted, setPromptSubmitted] = useState(false);
+
+    const[assignedPanelPrompt, setAssignedPanelPrompt] = useState('')
+    const[assignedComicTitle, setAssignedComicTitle] = useState('')
 
     const onDrawingSubmit = async (drawingInfo) => {
         console.log('Drawing submitted');
@@ -88,22 +90,39 @@ export default function PlayerGame()
         }
     }
 
-    const onPromptSubmitted = async (prompt) => {
-        console.log(`prompt ${prompt} was submitted`);
+    const onPromptSubmitted = async (title, prompts) => {
+        console.log("Submitting prompts...")
+        console.log(prompts)
 
-        if (promptSubmitted == false)
-    {
+        if (promptSubmitted == false) {
             setPromptSubmitted(true);
-        }       
-        /*
-        sending the prompt to the db for storage.
-        await fetch('api/submit-panel', {
+        }
+
+        var comicPlan = {
+            'comicTitle': title,
+            'prompts': prompts
+        }
+
+        //sending the prompt to the db for storage.
+        await fetch('api/submit-prompts', {
+            headers: { 'Content-Type': 'application/json' },
             method: 'POST',
-            body: prompt,
+            body: JSON.stringify(comicPlan),
             credentials: 'include'
         });
-        */
     }
+
+    useLayoutEffect(() => {
+        const initGameState = async () => {
+            await fetch('/api/lobby-settings')
+            .then(res => res.json())
+            .then(json => {
+                setTimeRemaining(json['timeLimit']);
+                setTotalRounds(json['numRounds']);
+            });
+        }
+        initGameState();
+    }, []);
 
     useEffect(() => {
         const handleRoundStart = (json, callback) => {
@@ -111,9 +130,9 @@ export default function PlayerGame()
 
             setCurrRound(json['currentRound']);
             setTotalRounds(json['totalRounds']);
-            setTimeRemaining(json['timeLimit'] * 60);
-            setIsSubmitted(false)
-            setPromptSubmitted(false)
+            setTimeRemaining(json['timeLimit']); //* 60);
+            setIsSubmitted(false);
+            setPromptSubmitted(false);
 
             callback();
         }
@@ -128,13 +147,11 @@ export default function PlayerGame()
         }
 
         const handleRoundEnd = async (callback) => {
-            console.log(currRound)
-            console.log(promptSubmitted)
-            if(currRound == 1 && promptSubmitted != true)
-        {
+            if(currRound === 1 && promptSubmitted != true) {
+                console.log("Prompt autosubmitted")
                 await onPromptSubmitted(promptRef.current);
             }
-            else if (isSubmitted != true) {
+            else if (currRound != 1 && isSubmitted != true) {
                 await drawScreenRef.current.submitDrawing();
             }
 
@@ -187,12 +204,17 @@ export default function PlayerGame()
                 currRound === 1
                     ? promptSubmitted
                         ? <WaitingOverlay/>
-                        : <PlanningPhase onPromptSubmitted = {onPromptSubmitted} promptRef={promptRef} numPanels={totalRounds}/>
+                        : <PlanningPhase onPromptSubmitted = {onPromptSubmitted} 
+                            promptRef={promptRef}
+                            numPanels={totalRounds}/>
                     : isSubmitted && timeRemaining > 0
                         ? <WaitingOverlay/>
                         :
                         <>
-                            <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/>
+                            <DrawScreen ref = {drawScreenRef}
+                                onDrawingSubmit={onDrawingSubmit}
+                                prompt={currRound}
+                                title={timeRemaining}/>
                             <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button>
                         </>
             }

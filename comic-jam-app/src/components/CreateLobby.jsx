@@ -52,7 +52,7 @@ export default function CreateLobby({ onDataSend })
                 numRounds: numOfRounds
             }
 
-            await fetch('/api/change-lobby-settings', {
+            await fetch('/api/lobby-settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(lobbySettings),

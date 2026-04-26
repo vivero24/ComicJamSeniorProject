@@ -50,7 +50,8 @@ def join_lobby():
                     game_id=game.host_id,
                     game=game,
                     owned_comic=None,
-                    assigned_comic_id=None)
+                    assigned_comic_id=None,
+                    assigned_prompt=None)
 
     db.session.add(player)
     db.session.commit()
@@ -130,8 +131,8 @@ def leave_lobby():
 
     return ''
 
-# /api/change-lobby-settings
-# POST endpoint called when a host updates the settings of their lobby
+# /api/lobby-settings
+# GET/POST endpoint called when a host updates the settings of their lobby
 #
 # Updates the game's settings and broadcasts a 'settings-update' to all
 # players in the lobby
@@ -143,21 +144,36 @@ def leave_lobby():
 #       "numRounds": Integer
 #       # NOTE: Other fields TBD
 #   }
-@main.route('/change-lobby-settings', methods=['POST'])
+@main.route('/lobby-settings', methods=['GET', 'POST'])
 def change_lobby_settings():
-    if 'host_id' not in session:
+
+    if request.method == 'POST' and 'host_id' not in session:
         return 'Error: User is not the host of a lobby', 403
+    
+    game: Game
+    if 'player_id' in session:
+        player = db.get_or_404(Player, session['player_id'])
+        game = player.game
+    elif 'host_id' in session:
+        game = db.get_or_404(Game, session['host_id'])
+    else:
+        abort(403)
 
-    game = db.get_or_404(Game, session['host_id'])
-    game.time_limit_minutes = request.json['timeLimit']
-    game.rount_count = request.json['numRounds']
-    db.session.commit()
+    if request.method == 'POST':
+        game.time_limit_minutes = request.json['timeLimit']
+        game.rount_count = request.json['numRounds']
+        db.session.commit()
 
-    current_app.logger.info(f"Game={game.invite_code}'s settings updated to time_limit={game.time_limit_minutes}")
+        current_app.logger.info(f"Game={game.invite_code}'s settings updated to time_limit={game.time_limit_minutes}")
+        broadcast_settings_update(game)
+        return 'Updated settings', 200
 
-    broadcast_settings_update(game)
-
-    return ''
+    else: #
+        return jsonify({
+        'inviteCode': game.invite_code,
+        'timeLimit': game.time_limit_minutes,
+        'numRounds': game.rount_count,
+        })
 
 # /api/submit-panel
 # POST endpoint called when a player submits the panel they were assigned
@@ -179,6 +195,11 @@ def submit_panel():
     comic = db.get_or_404(Comic, player.assigned_comic_id)
     image_data = request.get_data()
 
+    # Move panel creation to submit prompt
+    # just edit image here
+    
+    # TODO: Throwing error here, move panel creation to
+    # game manager
     panel = Panel(comic_id=comic.comic_id,
                   comic=comic,
                   image=image_data)
@@ -222,4 +243,3 @@ def submit_prompt():
     db.session.commit()
 
     return ''
-

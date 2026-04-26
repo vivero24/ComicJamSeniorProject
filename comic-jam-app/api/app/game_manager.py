@@ -36,6 +36,29 @@ def broadcast_game_event(event: Game_Event, game: Game, data=None):
 # currently bound to player count.
 # - May change require changes to account for sketching round
 def assign_comics(game: Game, current_round: int):
+    # When indexing panels, use -2 since drawing starts at
+    # round 1, and zero-indexed array
+
+    # collect comic IDs in array
+    # For each player, use assignment algorithm to
+    # determine which comicID goes to a player
+    #   Set assigned_comic_id using algorthm result
+    #   Set assigned_prompt using current_round-2 mentioned above
+    
+    # collect comic IDs
+    comic_IDs: List[int] = []
+    for player in game.players:
+        if player.owned_comic is not None:
+            comic_IDs.append(player.owned_comic.comic_id)
+
+    num_players = len(game.players)
+
+    #for index, player in enumerate(game.players):
+        
+
+
+
+    '''
     comic_IDs: List[int] = []
     for player in game.players:
         if player.owned_comic is not None:
@@ -54,9 +77,13 @@ def assign_comics(game: Game, current_round: int):
 
         player.assigned_comic_id = comic_IDs[comic_index]
 
+        target_comic = db.get_or_404(Comic, player.assigned_comic_id)
+        player.assigned_prompt = target_comic.panel_prompts[current_round - 2]
+
         current_app.logger.debug(f"Player={player.username}, id={player.player_id} assigned comic_id={player.assigned_comic_id}")
 
     db.session.commit()
+    '''
 
 def manage_game_loop(game_id: int, app: Flask):
     app.app_context().push()

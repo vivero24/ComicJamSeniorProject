@@ -47,7 +47,6 @@ def connect_handler():
         db.session.commit()
 
         game = player.game
-
         current_app.logger.debug(f"Player={player.username} joined Game={game.invite_code} with SID={player.socket_id}")
 
     elif 'host_id' in session:
