@@ -34,15 +34,24 @@ Finally, install the project dependencies:
 ```pip3 install -r requirements.txt```
 
 ### Installing new packages
+
 ```requirements.txt``` must be manually updated upon installing a new package/adding a new dependency:
 
-while **inside** the ```api/``` direct and with the virtual environment activated, run:
+~~While **inside** the ```api/``` direct and with the virtual environment activated, run:~~
 
-```pip install pipreqs ; pipreqs . --ignore .venv --force ; echo 'dotenv==0.9.9' >> requirements.txt```
+~~```pip install pipreqs ; pipreqs . --ignore .venv --force ; echo 'dotenv==0.9.9' >> requirements.txt```~~
 
-This will install and run the pipreqs utility, which generates a new requirements.txt based on the import statements in the project. Note that we must manually append ```dotenv``` onto this requirements.txt. Although ```dotenv``` is not used within the source code, it is necessary to run the Flask server via npm. 
+~~This will install and run the pipreqs utility, which generates a new requirements.txt based on the import statements in the project. Note that we must manually append ```dotenv``` onto this requirements.txt. Although ```dotenv``` is not used within the source code, it is necessary to run the Flask server via npm.~~
 
-**Make sure to include this file in your commits!**
+The above method has suddenly become unreliable. For now, you must manually edit the
+requirements file following the {package_name}=={version_number} format.
+
+The version number of a package can be obtained by running
+``` pip show {package_name} ``` 
+after it has been installed.
+
+**Make sure to include this edits to requirements.txt in your commits!**
+
 ### Running
 After completing the setup, the server can be run with the command:
 
