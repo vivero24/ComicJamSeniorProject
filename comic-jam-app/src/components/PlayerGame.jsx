@@ -135,7 +135,7 @@ export default function PlayerGame({numRounds, timeLimit})
 
             setCurrRound(json['currentRound']);
             setTotalRounds(json['totalRounds']);
-            setTimeRemaining(json['timeLimit']); //* 60);
+            setTimeRemaining(json['timeLimit'] * 60);
             setIsSubmitted(false);
             setPromptSubmitted(false);
 

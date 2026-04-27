@@ -136,6 +136,15 @@ def leave_lobby():
 # /api/lobby-settings
 # GET/POST endpoint called when a host updates the settings of their lobby
 #
+# GET:
+# Returns the game's settings as a JSON object with the following fields:
+#   {
+#       'inviteCode': String,
+#       'timeLimit': Integer representing minutes,
+#       'numRounds': Integer
+#   }
+#
+# POST:
 # Updates the game's settings and broadcasts a 'settings-update' to all
 # players in the lobby
 #
@@ -144,7 +153,6 @@ def leave_lobby():
 #   {
 #       "timeLimit": Integer,
 #       "numRounds": Integer
-#       # NOTE: Other fields TBD
 #   }
 @main.route('/lobby-settings', methods=['GET', 'POST'])
 def change_lobby_settings():
@@ -215,7 +223,10 @@ def submit_panel():
 # text prompts for each panel in their comic.
 #
 # Expected POST request body:
-#   JSON array of strings
+#   {
+#       'comicTitle': String
+#       'prompts': Array of Strings
+#   }
 @main.route('/submit-prompts', methods=['POST'])
 def submit_prompt():
     if 'player_id' not in session:
@@ -242,6 +253,18 @@ def submit_prompt():
 
     return ''
 
+# /api/list-comics
+# GET endpoint to request the comic names + IDs associated with a specific
+# game
+#
+# Returns an array of JSON objects with the following fields:
+#   [
+#       {
+#           "comicID": Integer,
+#           "comicName": String
+#       },
+#       ...etc...
+#   ]
 @main.route('/list-comics', methods=['GET'])
 def list_comics():
     game: Game
@@ -269,6 +292,11 @@ def list_comics():
 
     return jsonify(comics)
 
+# /api/download-comic?comicID={id}
+# GET endpoint called in the downloads/showcase page when a
+# user requests to download a comic.
+#
+# Returns a ZIP archive of the requested comic ID.
 @main.route('/download-comic', methods=['GET'])
 def download_comic():
     if 'player_id' not in session or 'host_id' not in session:

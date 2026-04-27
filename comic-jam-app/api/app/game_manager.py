@@ -23,8 +23,9 @@ def broadcast_game_event(event: Game_Event, game: Game, data: Optional[dict]=Non
         try:
             current_app.logger.debug(f"Pinging Player={player.username} in Game={game.invite_code} to acknowledge event={event}.")
 
+            # On round start only, send assignment details
+            # so the frontend can display the prompt and title
             if event == Game_Event.ROUND_START:
-
                 if data is None:
                     data = {}
 
@@ -41,10 +42,6 @@ def broadcast_game_event(event: Game_Event, game: Game, data: Optional[dict]=Non
 # players create at least one panel for each comic.
 #
 # Called at the start of each round.
-#
-# NOTE: - Will produce strange results since round count is not
-# currently bound to player count.
-# - May change require changes to account for sketching round
 def assign_comics(game: Game, current_round: int):
     # When indexing panels, use -2 since drawing starts at
     # round 1, and zero-indexed array
@@ -68,15 +65,19 @@ def assign_comics(game: Game, current_round: int):
     # Might be hiding a race condition, further testing needed.
     db.session.commit()
 
-    # Drawing begins at round 1
+    # Drawing begins at round 1, so consider it "0" for the
+    # sake of the algorithm below
     drawing_round = current_round - 1
     num_players = len(game.players)
     for index, player in enumerate(game.players):
-        
-        # debug code
+
+        # Temp code to avoid divide by zero,
+        # game start should be prevented if num_players < 3
         if num_players == 1:
             offset = 0
         else:
+            # Used to prevent players from being assigned their own comic
+            # if num_players < numRounds
             offset = int((drawing_round) / (num_players - 1))
 
         comic_index = ((index + drawing_round + 1) + offset) % num_players
@@ -149,7 +150,7 @@ def manage_game_loop(game_id: int, app: Flask):
         # TODO:
         # - Currently using seconds for debugging, but it should be changed
         # to minutes in the future.
-        round_end = time.time() + game.time_limit_minutes
+        round_end = time.time() + game.time_limit_minutes * 60
         while (time.time() < round_end):
             # Commit before check to sync with other sessions
             db.session.commit()
