@@ -10,6 +10,8 @@ import { socket } from '../socket.js'
 // TODO: 
 // - Update lobby with players as they join
 // - Send settings to the server as they are updated
+// - Specify that rounds means amount of rounds spent drawing
+// - Display +1 rounds everywhere else (Host inputs 8 rounds, displays 9)
 export default function CreateLobby({ onDataSend })
 {
     const navigate = useNavigate();
@@ -78,7 +80,7 @@ export default function CreateLobby({ onDataSend })
                 lobbyAvailability: lobbyAvailability,
             }
 
-            await fetch('/api/change-lobby-settings', {
+            await fetch('/api/lobby-settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(lobbySettings),
@@ -137,7 +139,10 @@ export default function CreateLobby({ onDataSend })
                                 min = "3"
                                 max = "8"
                                 value = {numOfRounds}
-                                onChange={e => { setNumOfRounds(restrictNumVal(e.target.value, e.target.min, e.target.max))}}>
+                                onChange={e => { 
+                                    setNumOfRounds(restrictNumVal(parseInt(e.target.value),
+                                        parseInt(e.target.min),
+                                        parseInt(e.target.max)))}}>
                             </input> <br></br>
                         </div>
 
@@ -146,10 +151,14 @@ export default function CreateLobby({ onDataSend })
                             <input type = "number"
                                 id = "timeLimit"
                                 name = "timeLimit"
-                                min = "30"
-                                max = "300"
+                                min = "1"
+                                max = "10"
                                 value = {timeLimit}
-                                onChange={e => { setTimeLimit(restrictNumVal(e.target.value, e.target.min, e.target.max))}}>
+                                onChange={e => { 
+                                    setTimeLimit(
+                                        restrictNumVal(parseInt(e.target.value),
+                                        parseInt(e.target.min),
+                                        parseInt(e.target.max)))}}>
                             </input> <br></br>
                         </div>
 

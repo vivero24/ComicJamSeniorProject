@@ -85,8 +85,7 @@ export default function PlayerLobby()
         navigate('/');
     };
 
-    console.log(players);
-        return(
+    return(
         <>
         <div id="container">
             <h1>Player Lobby</h1>
@@ -108,10 +107,10 @@ export default function PlayerLobby()
                     <div>Time Limit: {timeLimit} minutes</div>
                     <div>Lobby Availability: {lobbyAvailability ? "Lobby is open" : "Lobby is closed"}</div>
                 </div>
-            </div>
 
-            <div className = "buttonContainer">
-                <button onClick = {onPlayerLeave}>Leave Game</button>
+                <div className = "buttonContainer">
+                    <button onClick = {onPlayerLeave}>Leave Game</button>
+                </div>
             </div>
         </div>
         </>
