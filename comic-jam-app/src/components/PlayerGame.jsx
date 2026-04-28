@@ -1,8 +1,11 @@
 import DrawScreen from './DrawScreen';
-import {useState, useEffect, useRef} from 'react';
+import {useState, useEffect, useRef, useLayoutEffect, useImperativeHandle} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { socket } from '../socket.js'
 
+// TODO:
+// - Move current round and players still drawing to be on host side only
+// to give it a purpose
 
 //Need to figure out how to not show overlay when the timer goes off. Only do it when the button is clicked.
 function WaitingOverlay()
@@ -12,41 +15,70 @@ function WaitingOverlay()
     </>
 }
 
-function PlanningPhase({onPromptSubmitted, promptRef})
+function PlanningPhase({onPromptSubmitted, promptRef, numPanels})
 {
-    const [prompt, setPrompt] = useState("");
-    const handleChange = (e) =>{
-        setPrompt(e.target.value);
-        promptRef.current = e.target.value;
+    const [comicTitle, setComicTitle] = useState("");
+    const [prompts, setPrompts] = useState([...Array(numPanels)].map(() => {
+        return ""
+    }));
+
+    const updatePrompts = (newVal, targetIndex) => {
+        const newPrompts = prompts.map((currVal, currIndex) => {
+            if (currIndex === targetIndex) {
+                return newVal;
+            } else {
+                return currVal;
+            }
+        });
+
+        setPrompts(newPrompts);
     }
 
-    const submitPrompt = async() =>
-    {
-        await onPromptSubmitted(prompt);
+    const submitPrompt = async() => {
+        // collect input from all prompts
+        await onPromptSubmitted(comicTitle, prompts);
     }
 
-    return<>
-        <h1>Enter a prompt for your panel</h1>
-        <input type = "text" value = {prompt} onChange = {handleChange}></input>
-        <br></br>
-        <button onClick = {submitPrompt}>Submit prompt</button>
-    </>
+    useImperativeHandle(promptRef, () =>({
+        submitPrompt: submitPrompt
+        }
+    ));
+
+    return(
+        <>
+            <h1>What's the title of your comic?</h1>
+            <input type = "text" value = {comicTitle} onChange = {e => { setComicTitle(e.target.value)}} ></input>
+            <br></br>
+            <h1>Describe what should happen in each panel:</h1>
+            {prompts.map((val, i) => {
+                return (
+                    <input type = "text"
+                        value = {val}
+                        key = {i}
+                        placeholder={"Panel "+ (i+1)}
+                        onChange={ e => { updatePrompts(e.target.value, i) }}>
+                    </input>)
+            })}
+            <button onClick = {submitPrompt}>Submit prompt</button>
+        </>
+    )
 }
 
-export default function PlayerGame()
+export default function PlayerGame({numRounds, timeLimit})
 {
     const drawScreenRef = useRef();
     const promptRef = useRef();
     const navigate = useNavigate();
 
-    const[currRound, setCurrRound] = useState(1);
-    const[totalRounds, setTotalRounds] = useState(0);
-    const [initialTimeLimit, setInitialTimeLimit] = useState(15);
-    const[timeRemaining, setTimeRemaining] = useState(initialTimeLimit);
+    const[currRound, setCurrRound] = useState(null);
+    const[totalRounds, setTotalRounds] = useState(null);
+    const[timeRemaining, setTimeRemaining] = useState(60);
     const[isSubmitted, setIsSubmitted] = useState(false);
     const[numPlayersRemaining, setNumPlayersRemaining] = useState(0)
     const[promptSubmitted, setPromptSubmitted] = useState(false);
 
+    const[assignedPanelPrompt, setAssignedPanelPrompt] = useState('')
+    const[assignedComicTitle, setAssignedComicTitle] = useState('')
 
     const onDrawingSubmit = async (drawingInfo) => {
         console.log('Drawing submitted');
@@ -63,23 +95,39 @@ export default function PlayerGame()
         }
     }
 
-    const onPromptSubmitted = async (prompt) =>
-    {
-        console.log(`prompt ${prompt} was submitted`);
+    const onPromptSubmitted = async (title, prompts) => {
+        console.log("Submitting prompts...")
+        console.log(prompts)
 
-        if (promptSubmitted == false)
-        {
+        if (promptSubmitted == false) {
             setPromptSubmitted(true);
-        }       
-        /*
-        sending the prompt to the db for storage.
-        await fetch('api/submit-panel', {
+        }
+
+        var comicPlan = {
+            'comicTitle': title,
+            'prompts': prompts
+        }
+
+        //sending the prompt to the db for storage.
+        await fetch('api/submit-prompts', {
+            headers: { 'Content-Type': 'application/json' },
             method: 'POST',
-            body: prompt,
+            body: JSON.stringify(comicPlan),
             credentials: 'include'
         });
-        */
     }
+
+    useLayoutEffect(() => {
+        const initGameState = async () => {
+            await fetch('/api/lobby-settings')
+            .then(res => res.json())
+            .then(json => {
+                setTimeRemaining(json['timeLimit']);
+                setTotalRounds(json['numRounds']);
+            });
+        }
+        initGameState();
+    }, []);
 
     useEffect(() => {
         const handleRoundStart = (json, callback) => {
@@ -88,8 +136,11 @@ export default function PlayerGame()
             setCurrRound(json['currentRound']);
             setTotalRounds(json['totalRounds']);
             setTimeRemaining(json['timeLimit'] * 60);
-            setIsSubmitted(false)
-            setPromptSubmitted(false)
+            setIsSubmitted(false);
+            setPromptSubmitted(false);
+
+            setAssignedComicTitle(json['assignedTitle'])
+            setAssignedPanelPrompt(json['assignedPrompt'])
 
             callback();
         }
@@ -104,13 +155,13 @@ export default function PlayerGame()
         }
 
         const handleRoundEnd = async (callback) => {
-            console.log(currRound)
-            console.log(promptSubmitted)
-            if(currRound == 1 && promptSubmitted != true)
-            {
-                await onPromptSubmitted(promptRef.current);
+            // NOTE: Prompting phase has been moved to round 0 instead of 1
+            // so that all panels will be drawn for
+            if(currRound === 0 && promptSubmitted != true) {
+                console.log("Prompt autosubmitted")
+                await promptRef.current.submitPrompt();
             }
-            else if (isSubmitted != true) {
+            else if (currRound != 0 && isSubmitted != true) {
                 await drawScreenRef.current.submitDrawing();
             }
 
@@ -159,13 +210,24 @@ export default function PlayerGame()
                 </div>
             </div>
 
-            {currRound === 1 ? 
-                promptSubmitted ? <WaitingOverlay/> : <PlanningPhase onPromptSubmitted = {onPromptSubmitted} promptRef={promptRef}/>
-                 : isSubmitted && timeRemaining > 0 ? <WaitingOverlay/> :
-                <> 
-                    <DrawScreen ref = {drawScreenRef} onDrawingSubmit={onDrawingSubmit}/>
-                    <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button> 
-                </>}
+            {
+                currRound === 0
+                    ? promptSubmitted
+                        ? <WaitingOverlay/>
+                        : <PlanningPhase onPromptSubmitted = {onPromptSubmitted} 
+                            promptRef={promptRef}
+                            numPanels={totalRounds}/>
+                    : isSubmitted && timeRemaining > 0
+                        ? <WaitingOverlay/>
+                        :
+                        <>
+                            <DrawScreen ref = {drawScreenRef}
+                                onDrawingSubmit={onDrawingSubmit}
+                                prompt={assignedPanelPrompt}
+                                title={assignedComicTitle}/>
+                            <button onClick = {() => drawScreenRef.current.submitDrawing()}> Submit </button>
+                        </>
+            }
 
         </>
     );

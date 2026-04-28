@@ -47,7 +47,6 @@ def connect_handler():
         db.session.commit()
 
         game = player.game
-
         current_app.logger.debug(f"Player={player.username} joined Game={game.invite_code} with SID={player.socket_id}")
 
     elif 'host_id' in session:
@@ -97,7 +96,7 @@ def broadcast_settings_update(game: Game):
     settings = {
         'inviteCode': game.invite_code,
         'timeLimit': game.time_limit_minutes,
-        'numRounds': game.rount_count,
+        'numRounds': game.round_count,
     }
 
     emit('settings-update', settings, broadcast=True, namespace='/', to=game.invite_code)

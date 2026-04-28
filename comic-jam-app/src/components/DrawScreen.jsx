@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useImperativeHandle } from 'react'; 
 import p5 from 'p5';
 
-export default function DrawScreen({onDrawingSubmit, ref})
+export default function DrawScreen({onDrawingSubmit, ref, prompt, title})
 {
     const submitDrawing = async () =>{
         const imageData = p5Ref.current.getImageData();
@@ -11,7 +11,6 @@ export default function DrawScreen({onDrawingSubmit, ref})
         p5Ref.current.clearCanvas();
         await onDrawingSubmit(imageData)
     }
-
 
     useImperativeHandle(ref, () =>({
         submitDrawing: submitDrawing
@@ -182,6 +181,8 @@ export default function DrawScreen({onDrawingSubmit, ref})
                         </div>
                     </div>
                 </div>
+                <div>Prompt: "{prompt}"</div>
+                <div>From "{title}"</div>
                 <div ref = {canvasRef} id="canvas"></div>
             </div>
         </>

@@ -53,7 +53,7 @@ def join_lobby():
                     game_id=game.host_id,
                     game=game,
                     owned_comic=None,
-                    assigned_comic_id=None)
+                    assigned_panel_id=None)
 
     db.session.add(player)
     db.session.commit()
@@ -133,9 +133,18 @@ def leave_lobby():
 
     return ''
 
-# /api/change-lobby-settings
-# POST endpoint called when a host updates the settings of their lobby
+# /api/lobby-settings
+# GET/POST endpoint called when a host updates the settings of their lobby
 #
+# GET:
+# Returns the game's settings as a JSON object with the following fields:
+#   {
+#       'inviteCode': String,
+#       'timeLimit': Integer representing minutes,
+#       'numRounds': Integer
+#   }
+#
+# POST:
 # Updates the game's settings and broadcasts a 'settings-update' to all
 # players in the lobby
 #
@@ -144,23 +153,37 @@ def leave_lobby():
 #   {
 #       "timeLimit": Integer,
 #       "numRounds": Integer
-#       # NOTE: Other fields TBD
 #   }
-@main.route('/change-lobby-settings', methods=['POST'])
+@main.route('/lobby-settings', methods=['GET', 'POST'])
 def change_lobby_settings():
-    if 'host_id' not in session:
+
+    if request.method == 'POST' and 'host_id' not in session:
         return 'Error: User is not the host of a lobby', 403
+    
+    game: Game
+    if 'player_id' in session:
+        player = db.get_or_404(Player, session['player_id'])
+        game = player.game
+    elif 'host_id' in session:
+        game = db.get_or_404(Game, session['host_id'])
+    else:
+        abort(403)
 
-    game = db.get_or_404(Game, session['host_id'])
-    game.time_limit_minutes = request.json['timeLimit']
-    game.rount_count = request.json['numRounds']
-    db.session.commit()
+    if request.method == 'POST':
+        game.time_limit_minutes = request.json['timeLimit']
+        game.round_count = request.json['numRounds']
+        db.session.commit()
 
-    current_app.logger.info(f"Game={game.invite_code}'s settings updated to time_limit={game.time_limit_minutes}")
+        current_app.logger.info(f"Game={game.invite_code}'s settings updated to time_limit={game.time_limit_minutes}")
+        broadcast_settings_update(game)
+        return 'Updated settings', 200
 
-    broadcast_settings_update(game)
-
-    return ''
+    else: #
+        return jsonify({
+        'inviteCode': game.invite_code,
+        'timeLimit': game.time_limit_minutes,
+        'numRounds': game.round_count,
+        })
 
 # /api/submit-panel
 # POST endpoint called when a player submits the panel they were assigned
@@ -173,36 +196,75 @@ def submit_panel():
     if 'player_id' not in session:
         return 'Error: user is not a Player', 403
 
-    #db.session.commit()
-
     player = db.get_or_404(Player, session['player_id'])
 
-    if player.assigned_comic_id is None:
+    if player.assigned_panel_id is None:
         current_app.logger.warning(f"Player={player.username} attempted submission without an active assignment")
-        return "Error: Player does not have a comic assigned.", 400
+        return "Error: Player does not have a panel assigned.", 400
 
-    comic = db.get_or_404(Comic, player.assigned_comic_id)
+    panel = db.get_or_404(Panel, player.assigned_panel_id)
     image_data = request.get_data()
 
-    panel = Panel(comic_id=comic.comic_id,
-                  comic=comic,
-                  image=image_data)
-
-    
-
-    db.session.add(panel)
+    panel.image = image_data
 
     # Clear assignment to indicate player submitted
-    player.assigned_comic_id = None
+    player.assigned_panel_id = None
     player.game.num_players_unsubmitted -= 1
     db.session.commit()
 
     broadcast_player_submission_update(player.game)
 
-    current_app.logger.debug(f"Player={player.username} submitted panel for Comic={comic.comic_name}")
+    current_app.logger.debug(f"Player={player.username} submitted panel={panel.panel_id} for Comic={panel.comic.comic_name}")
 
     return ''
 
+# /api/submit-prompt
+# POST endpoint called when a player finishes writing the
+# text prompts for each panel in their comic.
+#
+# Expected POST request body:
+#   {
+#       'comicTitle': String
+#       'prompts': Array of Strings
+#   }
+@main.route('/submit-prompts', methods=['POST'])
+def submit_prompt():
+    if 'player_id' not in session:
+        return 'Error: user is not a Player', 403
+
+    json = request.json
+    player = db.get_or_404(Player, session['player_id'])
+
+    if player.owned_comic is None:
+        current_app.logger.warning(f"Player={player.username} attempted prompt submission before game start")
+        return "Error: Prompts not expected at this time.", 400
+
+    player.owned_comic.comic_name = json['comicTitle']
+
+    recieved_prompts = json['prompts']
+    for index in range(player.game.round_count):
+        panel = player.owned_comic.panels[index]
+        panel.prompt = recieved_prompts[index]
+        current_app.logger.debug(f"Assigned prompt=\"{recieved_prompts[index]}\" to panel={index} of comic={player.owned_comic.comic_name}")
+
+    player.game.num_players_unsubmitted -= 1
+    db.session.commit()
+    broadcast_player_submission_update(player.game)
+
+    return ''
+
+# /api/list-comics
+# GET endpoint to request the comic names + IDs associated with a specific
+# game
+#
+# Returns an array of JSON objects with the following fields:
+#   [
+#       {
+#           "comicID": Integer,
+#           "comicName": String
+#       },
+#       ...etc...
+#   ]
 @main.route('/list-comics', methods=['GET'])
 def list_comics():
     game: Game
@@ -227,10 +289,14 @@ def list_comics():
         }
 
         comics.append(comic_json)
-    
-    print(comics)
+
     return jsonify(comics)
 
+# /api/download-comic?comicID={id}
+# GET endpoint called in the downloads/showcase page when a
+# user requests to download a comic.
+#
+# Returns a ZIP archive of the requested comic ID.
 @main.route('/download-comic', methods=['GET'])
 def download_comic():
     if 'player_id' not in session or 'host_id' not in session:
@@ -242,7 +308,12 @@ def download_comic():
 
     comic_archive = BytesIO()
     with zipfile.ZipFile(comic_archive, 'w') as zip:
-        for idx, panel in enumerate(comic.completed_panels):
+        for idx, panel in enumerate(comic.panels):
+            if panel.image is None:
+                error_str = f"ZIP archive could not be created -- unable to retrieve panel={idx} of comic={panel.comic.comic_name}"
+                current_app.logger.error(error_str)
+                return error_str, 500
+
             image_URL_raw = data_url.DataURL.from_url(panel.image.decode())
 
             if image_URL_raw is None:
@@ -256,4 +327,3 @@ def download_comic():
                          URL_data)
     comic_archive.seek(0)
     return send_file(comic_archive, mimetype='application/zip')
-    return ''
