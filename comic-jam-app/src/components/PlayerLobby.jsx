@@ -103,8 +103,8 @@ export default function PlayerLobby()
                 ))}
                 </div>
                 <div className = "menuContainer">
-                    <div>Rounds: {numRounds}</div>
-                    <div>Time Limit: {timeLimit} minutes</div>
+                    <div>Number of Rounds: {numRounds}</div>
+                    <div>Round Time Limit: {timeLimit} {timeLimit == 1 ? "minute" : "minutes"}</div>
                     <div>Lobby Availability: {lobbyAvailability ? "Lobby is open" : "Lobby is closed"}</div>
                 </div>
 

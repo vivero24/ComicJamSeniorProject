@@ -132,7 +132,7 @@ export default function CreateLobby({ onDataSend })
 
                     <div className = "menuContainer">
                         <div className = "inputRow">
-                            <label htmlFor = "numOfRounds" >Number of Rounds</label>
+                            <label htmlFor = "numOfRounds" >Set Number of Rounds</label>
                             <input type = "number"
                                 id = "numOfRounds"
                                 name = "numOfRounds"
@@ -147,7 +147,7 @@ export default function CreateLobby({ onDataSend })
                         </div>
 
                         <div className = "inputRow">
-                            <label htmlFor = "timeLimit">Round Time Limit</label>
+                            <label htmlFor = "timeLimit">Set Round Time Limit (Minutes)</label>
                             <input type = "number"
                                 id = "timeLimit"
                                 name = "timeLimit"
@@ -163,7 +163,7 @@ export default function CreateLobby({ onDataSend })
                         </div>
 
                         <div className = "inputRow">
-                            <label htmlFor = "canJoin">Lobby Availability</label>
+                            <label htmlFor = "canJoin">Set Lobby Availability</label>
                             <button className="button-start" onClick={changeLobbyAvailability}>{lobbyAvailability ? "Lobby Open" : "Lobby Closed"}</button>
                             <br></br>
                         </div>

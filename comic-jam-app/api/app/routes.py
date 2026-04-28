@@ -226,8 +226,8 @@ def change_lobby_settings():
 
     if request.method == 'POST':
         game = db.get_or_404(Game, session['host_id'])
+        game.round_count = request.json['numRounds']
         game.time_limit_minutes = request.json['timeLimit']
-        game.rount_count = request.json['numRounds']
         game.lobby_availability = request.json['lobbyAvailability']
         db.session.commit()
 
