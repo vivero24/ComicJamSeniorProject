@@ -50,6 +50,7 @@ def connect_handler():
         current_app.logger.debug(f"Player={player.username} joined Game={game.invite_code} with SID={player.socket_id}")
 
     elif 'host_id' in session:
+        print(f"Testing={'host_id'}")
         game = db.get_or_404(Game, session['host_id'])
 
         current_app.logger.debug(f"Host connected to Game={game.invite_code} with SID={request.sid}") # # pyright: ignore[reportAttributeAccessIssue]
@@ -75,11 +76,15 @@ def disconnect_handler():
 #
 # Sends a JSON array of strings
 def broadcast_lobby_update(game: Game):
-    usernames = []
+    players = []
     for p in game.players:
-        usernames.append(p.username)
+        player = {
+            'username': p.username,
+            'ID': p.player_id
+        }
+        players.append(player);
 
-    emit('lobby-update', usernames, broadcast=True, namespace='/', to=game.invite_code)
+    emit('lobby-update', players, broadcast=True, namespace='/', to=game.invite_code)
 
 # Emitter for 'settings-update' event
 #
@@ -97,6 +102,7 @@ def broadcast_settings_update(game: Game):
         'inviteCode': game.invite_code,
         'timeLimit': game.time_limit_minutes,
         'numRounds': game.round_count,
+        'lobbyAvailability': game.lobby_availability
     }
 
     emit('settings-update', settings, broadcast=True, namespace='/', to=game.invite_code)

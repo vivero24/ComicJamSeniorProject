@@ -24,6 +24,7 @@ class Game(db.Model, MappedAsDataclass):
     round_count: Mapped[int] = mapped_column(default=4)
 
     time_limit_minutes: Mapped[int] = mapped_column(default=10)
+    lobby_availability: Mapped[bool] = mapped_column(default=True)
 
 
 class Player(db.Model, MappedAsDataclass):

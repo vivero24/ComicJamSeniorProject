@@ -8,6 +8,7 @@ from flask import Blueprint, abort, current_app, jsonify, request, send_file, se
 
 from .models import db, Game, Player, Comic, Panel
 from sqlalchemy import select
+from . import socketio
 
 from .events import broadcast_lobby_update, broadcast_player_submission_update, broadcast_settings_update
 
@@ -45,6 +46,9 @@ def join_lobby():
     # Return 403: Forbidden if lobby is full
     if len(game.players) >= game.player_cap:
         return jsonify({'error': 'Lobby is full'}), 403
+    
+    if not game.lobby_availability:
+        return jsonify({'error': 'Lobby is set to private'}), 402
 
     # Register player in database
     username = json['userName']
@@ -86,8 +90,14 @@ def create_lobby():
     # TODO: handle case where this user already has a
     # session, delete player or game from database
 
-    game = Game(invite_code=generate_game_code(), players=[])
+    if 'host_id' in session:
+        existing_game = Game.query.filter_by(host_id=session['host_id']).first()
+        if existing_game:
+            broadcast_settings_update(existing_game)
+            return jsonify({'invite_code': existing_game.invite_code, 'already_exists': True})
+        session.pop('host_id', None)
 
+    game = Game(invite_code=generate_game_code(), players=[])
     db.session.add(game)
     db.session.commit()
 
@@ -95,7 +105,7 @@ def create_lobby():
     # Create new flask session for this host
     session['host_id'] = game.host_id
 
-    return jsonify({'invite_code': game.invite_code})
+    return jsonify({'invite_code': game.invite_code, 'already_exists': False})
 
 # /api/leave-lobby
 # GET endpoint called when user requests to leave a lobby
@@ -117,19 +127,65 @@ def leave_lobby():
         current_app.logger.debug(f"Player={player.username} left Game={game.invite_code}, deleting...")
         db.session.delete(player)
         session.pop('player_id')
-
         broadcast_lobby_update(game)
-    elif 'host_id' in session:
-        # TODO: handle game deletion, maybe place host deletion in a different
-        # endpoint entirely? /api/close-lobby
-        game = db.get_or_404(Game, session['host_id'])
-        current_app.logger.debug(f"Host closed Game={game.invite_code}, deleting...")
-        db.session.delete(game)
-        session.pop('host_id')
     else:
         return abort(403)
 
     db.session.commit()
+
+    return ''
+
+@main.route('/kick-player')
+def kick_player():
+    # TODO: 
+    # Determine which player to kick from lobby based of ID
+
+    player_id = request.args.get("player_id")
+    found_player = db.get_or_404(Player, player_id)
+    game = found_player.game
+
+    print(found_player.socket_id)
+
+    socketio.call('player-kicked', to=found_player.socket_id, timeout=5)
+
+    db.session.delete(found_player)
+    session.pop('player_id')
+    broadcast_lobby_update(game)
+
+    db.session.commit()
+
+    return ''
+
+@main.route('/close-lobby')
+def close_lobby():
+    # TODO: 
+    # when host closes the lobby, remove all players and delete the lobby from the DB
+    if 'host_id' not in session:
+        abort(403)
+
+    game = db.get_or_404(Game, session['host_id'])
+
+    # If user is also a player in the game they are hosting, clear the player_id too
+    if 'player_id' in session:
+        player = db.get_or_404(Player, session['player_id'])
+
+        if game.host_id == player.game_id:
+            session.pop('player_id')
+
+    current_app.logger.debug(f"Host closed Game={game.invite_code}, deleting...")
+
+    for player in game.players:
+        try:
+            # Require players to acknowledge lobby closure before deleting them
+            socketio.call('lobby-closed', to=player.socket_id, timeout=10)
+            db.session.delete(player)
+        except TimeoutError:
+            print("timeout error whoopsies")
+
+    db.session.delete(game)
+    db.session.commit()
+
+    session.pop('host_id')
 
     return ''
 
@@ -156,7 +212,6 @@ def leave_lobby():
 #   }
 @main.route('/lobby-settings', methods=['GET', 'POST'])
 def change_lobby_settings():
-
     if request.method == 'POST' and 'host_id' not in session:
         return 'Error: User is not the host of a lobby', 403
     
@@ -170,8 +225,10 @@ def change_lobby_settings():
         abort(403)
 
     if request.method == 'POST':
+        game = db.get_or_404(Game, session['host_id'])
         game.time_limit_minutes = request.json['timeLimit']
-        game.round_count = request.json['numRounds']
+        game.rount_count = request.json['numRounds']
+        game.lobby_availability = request.json['lobbyAvailability']
         db.session.commit()
 
         current_app.logger.info(f"Game={game.invite_code}'s settings updated to time_limit={game.time_limit_minutes}")

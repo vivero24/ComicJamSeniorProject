@@ -20,24 +20,51 @@ export default function CreateLobby({ onDataSend })
     const[players, setPlayers] = useState([]);
     const[numOfRounds, setNumOfRounds] = useState(4);
     const[timeLimit, setTimeLimit] = useState(5);
+    const[lobbyAvailability, setLobbyAvailability] = useState(true);
 
     useEffect(() => {
-        socket.connect();
+        const onReload = async () => {
+            if (sessionStorage.getItem("leftLobby") === "true") {
+                sessionStorage.removeItem("leftLobby");
+                try{
+                    await fetch('/api/close-lobby');
+                } catch {
+                    print("Tried to close lobby, error on reload")
+                }
+                socket.disconnect();
+                navigate('/');
+                return;
+            }
+        }
+        onReload()
 
-        const handleLobbyUpdate = (usernames) => {
-            setPlayers(usernames);
+        const handleLobbyUpdate = (players) => {
+            setPlayers(players);
         };
 
         const handleSettingsUpdate = (json) => {
             setInviteCode(json['inviteCode']);
         };
 
+        const handlePageLeave = async () => {
+            sessionStorage.setItem("leftLobby", "true");
+            await closeLobby();
+        };
+
         socket.on('lobby-update', handleLobbyUpdate);
         socket.on('settings-update', handleSettingsUpdate);
+
+        socket.connect();
+
+        window.addEventListener('beforeunload', handlePageLeave);
+        window.addEventListener('pagehide', handlePageLeave);
 
         return () => {
             socket.off('lobby-update', handleLobbyUpdate);
             socket.off('settings-update', handleSettingsUpdate);
+            
+            window.removeEventListener('beforeunload', handlePageLeave);
+            window.removeEventListener('pagehide', handlePageLeave);
         }
     }, []);
 
@@ -49,7 +76,8 @@ export default function CreateLobby({ onDataSend })
             // settings are ironed out
             const lobbySettings = {
                 timeLimit: timeLimit,
-                numRounds: numOfRounds
+                numRounds: numOfRounds,
+                lobbyAvailability: lobbyAvailability,
             }
 
             await fetch('/api/lobby-settings', {
@@ -60,7 +88,7 @@ export default function CreateLobby({ onDataSend })
         };
 
         updateSettings();
-    }, [timeLimit, numOfRounds]);
+    }, [timeLimit, numOfRounds, lobbyAvailability]);
 
     const onStartGame = async () => {
 
@@ -75,8 +103,8 @@ export default function CreateLobby({ onDataSend })
         }
     }
 
-    const closeLobby = () => {
-        //socket.emit('host-closed-lobby');
+    const closeLobby = async () => {
+        await fetch('/api/close-lobby');
         socket.disconnect();
         navigate('/');
     }
@@ -86,6 +114,14 @@ export default function CreateLobby({ onDataSend })
         if (value > max) value = max;
         return value;
     };
+
+    const kickPlayer = async (playerToKick) => {
+        await fetch('/api/kick-player?player_id='+playerToKick)
+    }
+
+    const changeLobbyAvailability = async () => {
+        setLobbyAvailability(!lobbyAvailability);
+    }
 
     return (
         <>
@@ -125,15 +161,22 @@ export default function CreateLobby({ onDataSend })
                                         parseInt(e.target.max)))}}>
                             </input> <br></br>
                         </div>
+
+                        <div className = "inputRow">
+                            <label htmlFor = "canJoin">Lobby Availability</label>
+                            <button className="button-start" onClick={changeLobbyAvailability}>{lobbyAvailability ? "Lobby Open" : "Lobby Closed"}</button>
+                            <br></br>
+                        </div>
                     </div>
 
                     <div className = "menuContainer">
                         <h4>Players Joined</h4>
                         {players.length === 0 && <p>No players joined yet.</p>}
                         {players.map((player) => (
-                            <div className = "playerCard" key = {player}>
-                                <h4>{player}</h4>
+                            <div className = "playerCard" key = {player.ID}>
+                                <h4>{player.username}</h4>
                                 <img src = "/defaultpfp.png" id = "defaultPicture" width = "40" height = "40"></img>
+                                <button className="button-start" onClick={() => kickPlayer(player.ID)}>Kick Player</button>
                             </div>
                         ))}
                     </div>
